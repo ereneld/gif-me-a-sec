@@ -6,6 +6,7 @@ A Chrome extension that uses a GIF as your camera in Google Meet, Zoom (web), Mi
 - **Still frame**: shows a single frame as a static picture.
 - **Pick GIFs** from GIPHY or Tenor search, Pixabay videos and images, a direct link, or an uploaded file (GIF, WebP, PNG, JPEG). Pixabay videos are converted to a 10-second, 10 fps clip in the popup.
 - **Quick panel in meetings**: while GifCam is your camera, a small GIF button sits in the corner of the meeting page. It opens reaction shortcuts (wow, lol, applause, bye…), a search box and a scrollable 3-column grid. One click plays that GIF, then hands back to your camera.
+- **Simple popup**: the popup is just search and pick. Play time, what happens after, fit and API keys live under Settings (the gear).
 - **Live controls**: change settings mid-call, replay the GIF, or turn GifCam off to hand the stream back to your real camera without rejoining.
 
 ## Install (developer mode)

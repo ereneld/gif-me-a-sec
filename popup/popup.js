@@ -81,9 +81,9 @@ async function renderPreview() {
     $("gifTitle").textContent = gif.title || "Selected GIF";
   } else {
     const span = document.createElement("span");
-    span.textContent = "No GIF selected";
+    span.textContent = "None";
     preview.append(span);
-    $("gifTitle").textContent = "Pick a GIF below";
+    $("gifTitle").textContent = "Pick a GIF above";
   }
 }
 

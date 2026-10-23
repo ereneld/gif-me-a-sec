@@ -19,51 +19,6 @@
 
   <main id="mainView">
 
-  <section class="current">
-    <div class="preview" id="preview"><span>No GIF selected</span></div>
-    <div class="current-info">
-      <div class="title" id="gifTitle">Pick a GIF below</div>
-      <div class="hint" id="statusLine">Off. Turn on, then start (or restart) your camera in the meeting.</div>
-      <button id="replay" class="secondary" type="button">Replay GIF in this tab</button>
-    </div>
-  </section>
-
-  <section class="options">
-    <div class="row">
-      <span class="label">Mode</span>
-      <div class="segmented" role="radiogroup">
-        <label><input type="radio" name="mode" value="animated" checked /><span>Animated</span></label>
-        <label><input type="radio" name="mode" value="still" /><span>Still frame</span></label>
-      </div>
-    </div>
-    <div class="row animated-only">
-      <label class="label" for="duration">Play for</label>
-      <div class="inline"><input type="number" id="duration" min="0.5" max="3600" step="0.5" value="5" /> sec</div>
-    </div>
-    <div class="row animated-only">
-      <label class="label" for="after">Then</label>
-      <select id="after">
-        <option value="camera">Switch to my real camera</option>
-        <option value="freeze">Freeze on the last frame</option>
-        <option value="loop">Keep looping</option>
-      </select>
-    </div>
-    <div class="row">
-      <label class="label" for="fit">Fit</label>
-      <select id="fit">
-        <option value="contain">Fit inside (letterbox)</option>
-        <option value="cover">Fill and crop</option>
-      </select>
-    </div>
-    <div class="row contain-only">
-      <label class="label" for="background">Bars</label>
-      <select id="background">
-        <option value="blur">Blurred GIF</option>
-        <option value="black">Black</option>
-      </select>
-    </div>
-  </section>
-
   <section class="picker">
     <nav class="tabs">
       <button type="button" data-tab="giphy" class="active">GIPHY</button>
@@ -104,7 +59,14 @@
     </div>
   </section>
 
-
+  <section class="current">
+    <div class="preview" id="preview"><span>None</span></div>
+    <div class="current-info">
+      <div class="title" id="gifTitle">Pick a GIF above</div>
+      <div class="hint" id="statusLine"></div>
+    </div>
+    <button id="replay" class="icon-btn" type="button" title="Replay in this tab" aria-label="Replay in this tab">↻</button>
+  </section>
   </main>
 
   <main id="settingsView" class="hidden">
@@ -113,8 +75,45 @@
         <button type="button" id="closeSettings" class="secondary">← Back</button>
         <h2>Settings</h2>
       </div>
+      <h3>Playback</h3>
+      <div class="options">
+        <div class="row">
+          <span class="label">Mode</span>
+          <div class="segmented" role="radiogroup">
+            <label><input type="radio" name="mode" value="animated" checked /><span>Animated</span></label>
+            <label><input type="radio" name="mode" value="still" /><span>Still frame</span></label>
+          </div>
+        </div>
+        <div class="row animated-only">
+          <label class="label" for="duration">Play for</label>
+          <div class="inline"><input type="number" id="duration" min="0.5" max="3600" step="0.5" value="5" /> sec</div>
+        </div>
+        <div class="row animated-only">
+          <label class="label" for="after">Then</label>
+          <select id="after">
+            <option value="camera">Switch to my real camera</option>
+            <option value="freeze">Freeze on the last frame</option>
+            <option value="loop">Keep looping</option>
+          </select>
+        </div>
+        <div class="row">
+          <label class="label" for="fit">Fit</label>
+          <select id="fit">
+            <option value="contain">Fit inside (letterbox)</option>
+            <option value="cover">Fill and crop</option>
+          </select>
+        </div>
+        <div class="row contain-only">
+          <label class="label" for="background">Bars</label>
+          <select id="background">
+            <option value="blur">Blurred GIF</option>
+            <option value="black">Black</option>
+          </select>
+        </div>
+      </div>
       <h3>API keys</h3>
       <p class="hint">Needed only for searching. Links and uploads work without a key. Keys are saved in this browser only.</p>
+      <div class="keys">
       <label>GIPHY API key <a href="https://developers.giphy.com/dashboard/" target="_blank" rel="noopener">get one</a>
         <input type="text" id="giphyKey" autocomplete="off" spellcheck="false" />
       </label>
@@ -124,6 +123,7 @@
       <label>Pixabay API key <a href="https://pixabay.com/api/docs/" target="_blank" rel="noopener">get one</a>
         <input type="text" id="pixabayKey" autocomplete="off" spellcheck="false" />
       </label>
+      </div>
       <h3>In meetings</h3>
       <label class="check"><input type="checkbox" id="showPanel" /> Show the GIF quick panel while GifCam is your camera</label>
       <h3>Keyboard shortcuts</h3>
