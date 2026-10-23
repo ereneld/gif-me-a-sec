@@ -1,4 +1,4 @@
-import { PROVIDERS, thumbnail } from "./providers.js";
+import { PROVIDERS, thumbnail, infiniteResults } from "./providers.js";
 import { storeImage, storeRemoteImage, storeRemoteVideo } from "./media.js";
 
 const $ = (id) => document.getElementById(id);
@@ -54,7 +54,7 @@ function renderStatus(status) {
   if (!state.enabled) line = "Off. Your camera shows as normal.";
   else if (!state.gif) line = "On. Pick a GIF to play on your camera.";
   else if (status && status.activeStreams > 0) line = "Playing on your camera in this tab.";
-  else line = "On. It plays when your camera starts, or when you pick a GIF.";
+  else line = "On. Pick a GIF and it plays on your camera.";
   $("statusLine").textContent = line;
 }
 
@@ -257,11 +257,10 @@ function showTab(tab) {
   if (PROVIDERS[tab]) runSearch();
 }
 
-let searchToken = 0;
-async function runSearch() {
+let feed = null;
+function runSearch() {
   const provider = PROVIDERS[state.tab];
   if (!provider) return;
-  const token = ++searchToken;
   const results = $("results");
   const notice = $("keyNotice");
   const key = state[provider.keyName];
@@ -271,44 +270,38 @@ async function runSearch() {
   $("searchForm").classList.toggle("hidden", !key);
   if (!key) {
     // No key for this tab yet: ask for it right here.
+    if (feed) feed.stop();
     results.replaceChildren();
     notice.replaceChildren(keyCard(state.tab, (value) => value && runSearch()));
     notice.classList.remove("hidden");
     return;
   }
   notice.classList.add("hidden");
-  results.replaceChildren(emptyCell("Loading…"));
-
-  try {
-    const items = await provider.search($("query").value.trim(), key, { type: state.pixabayType });
-    if (token !== searchToken) return;
-    if (!items.length) {
-      results.replaceChildren(emptyCell("No GIFs found."));
-      return;
-    }
-    results.replaceChildren(
-      ...items.map((item) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.title = item.title;
-        btn.append(thumbnail(item));
-        if (item.kind === "video") {
-          const badge = document.createElement("span");
-          badge.className = "badge";
-          badge.textContent = item.seconds ? `▶ ${item.seconds}s` : "▶";
-          btn.append(badge);
-        }
-        const meta = { title: item.title, source: state.tab };
-        btn.addEventListener("click", () =>
-          item.kind === "video" ? useRemoteVideo(item.url, meta) : useRemoteGif(item.url, meta)
-        );
-        return btn;
-      })
-    );
-  } catch (err) {
-    if (token !== searchToken) return;
-    results.replaceChildren(emptyCell(`Search failed: ${err.message}. Check your API key.`));
-  }
+  if (feed) feed.stop();
+  feed = infiniteResults(results, {
+    provider,
+    key,
+    term: $("query").value.trim(),
+    options: { type: state.pixabayType },
+    message: emptyCell,
+    tile: (item) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.title = item.title;
+      btn.append(thumbnail(item));
+      if (item.kind === "video") {
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = item.seconds ? `▶ ${item.seconds}s` : "▶";
+        btn.append(badge);
+      }
+      const meta = { title: item.title, source: state.tab };
+      btn.addEventListener("click", () =>
+        item.kind === "video" ? useRemoteVideo(item.url, meta) : useRemoteGif(item.url, meta)
+      );
+      return btn;
+    },
+  });
 }
 
 function emptyCell(text) {

@@ -115,3 +115,4 @@ button:disabled { opacity: .5; cursor: default; }
 .welcome #welcomeDone { padding: 9px; }
 button.link { background: none; color: var(--muted); font-weight: 500; text-decoration: underline; padding: 2px; }
 html.in-tab body { margin: 40px auto; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.grid .sentinel { grid-column: 1 / -1; min-height: 1px; text-align: center; color: var(--muted); font-size: 12px; }

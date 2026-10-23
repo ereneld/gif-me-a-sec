@@ -21,7 +21,7 @@ Reaction GIFs on your webcam. Gif Me A Sec is a Chrome extension that plays a GI
 1. On install, a welcome page asks for a free API key from GIPHY, Tenor or Pixabay (links to get one are right there). Any provider tab without a key shows the same key box.
 2. Reload any meeting tabs that were open before you installed the extension.
 3. Pick a GIF in the popup or in the quick panel in the meeting (search needs an API key, see below; URL and Upload work without one).
-4. The GIF plays on your camera for 5 seconds, then you're back. It also plays each time your camera starts.
+4. The GIF plays on your camera for 5 seconds, then you're back. It only plays when you pick a GIF (or press Replay); turning the extension on or starting your camera never plays one by itself. Search results load 9 at a time as you scroll.
 
 Keyboard shortcuts (change them at `chrome://extensions/shortcuts`):
 

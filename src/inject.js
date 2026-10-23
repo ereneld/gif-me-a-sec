@@ -22,6 +22,7 @@
   const originalGetUserMedia = mediaDevices.getUserMedia.bind(mediaDevices);
 
   let settings = { ...DEFAULTS };
+  let settingsLoaded = false;
   let frames = []; // [{ bitmap, duration }] duration in ms
   let totalDuration = 0;
   let decodeToken = 0;
@@ -58,11 +59,18 @@
       cleaned[key] = next && next[key] !== undefined ? next[key] : DEFAULTS[key];
     }
     cleaned.duration = Math.max(0.5, Number(cleaned.duration) || DEFAULTS.duration);
+    const pickedBefore = settings.gif && settings.gif.pickedAt;
+    const pickedNow = cleaned.gif && cleaned.gif.pickedAt;
+    const firstLoad = !settingsLoaded;
+    settingsLoaded = true;
     settings = cleaned;
     if (frameSet) await loadFrameSet(frameSet);
     else if (gifBuffer) await loadGif(gifBuffer, (settings.gif && settings.gif.mime) || "image/gif");
     else if (!settings.gif) setFrames([]);
-    sources.forEach((s) => s.restart());
+    // The GIF plays only when the user picks one (or presses Replay), never just
+    // because GifCam was switched on or a setting changed.
+    if (!settings.enabled) sources.forEach((s) => s.stopGif());
+    else if (!firstLoad && pickedNow && pickedNow !== pickedBefore) sources.forEach((s) => s.restart());
     notifyStreams();
   }
 
@@ -198,8 +206,8 @@
       } else {
         this.setupCanvasFallback();
       }
+      this.startedAt = null; // camera only until a GIF is picked
       this.disguise();
-      this.restart();
     }
 
     // The page should see its own camera: same label, settings and controls.
@@ -232,13 +240,18 @@
       this.lastFrame = null;
     }
 
+    stopGif() {
+      this.startedAt = null;
+      this.lastFrame = null;
+    }
+
     isEnded() {
       return this.real.readyState === "ended";
     }
 
     // Which GIF frame to show right now, or null for the camera.
     gifFrame() {
-      if (!settings.enabled || !frames.length) return null;
+      if (!settings.enabled || !frames.length || this.startedAt == null) return null;
       const elapsed = performance.now() - this.startedAt;
       const playing = settings.after === "loop" || elapsed < settings.duration * 1000;
       if (playing) {

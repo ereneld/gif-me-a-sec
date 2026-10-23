@@ -1,6 +1,6 @@
 // In-meeting quick panel: reaction shortcuts, search, and a 3-column grid.
 // Lives in an extension iframe so meeting-page CSP can't block it.
-import { PROVIDERS, thumbnail } from "../popup/providers.js";
+import { PROVIDERS, thumbnail, infiniteResults } from "../popup/providers.js";
 import { storeRemoteImage, storeRemoteVideo } from "../popup/media.js";
 
 const $ = (id) => document.getElementById(id);
@@ -21,7 +21,7 @@ const QUICK = [
 
 let state = {};
 let streams = 0;
-let searchToken = 0;
+let feed = null;
 let busy = false;
 
 function tell(size) {
@@ -32,7 +32,11 @@ function setOpen(open) {
   $("panel").classList.toggle("hidden", !open);
   $("launcher").classList.toggle("hidden", open);
   tell(open ? "open" : "closed");
-  if (open) $("query").focus();
+  if (open) {
+    $("query").focus();
+    // Let the results fill the newly visible grid.
+    requestAnimationFrame(() => $("grid").dispatchEvent(new Event("scroll")));
+  }
 }
 
 function status(text) {
@@ -82,11 +86,12 @@ function emptyCell(text, action) {
   return div;
 }
 
-async function search(term) {
+function search(term) {
   renderChips(term);
   const grid = $("grid");
   const providerId = state.panelProvider;
   if (!providerId) {
+    if (feed) feed.stop();
     grid.replaceChildren(
       emptyCell("Add a free GIPHY, Tenor or Pixabay API key to search.", {
         label: "Add a key",
@@ -96,18 +101,16 @@ async function search(term) {
     return;
   }
   const provider = PROVIDERS[providerId];
-  const token = ++searchToken;
-  grid.replaceChildren(emptyCell("Loading…"));
-  try {
-    const items = await provider.search(term, state[provider.keyName], { type: state.pixabayType });
-    if (token !== searchToken) return;
-    if (!items.length) return grid.replaceChildren(emptyCell("No GIFs found."));
-    grid.replaceChildren(...items.map(tile));
-    grid.scrollTop = 0;
-    status(provider.attribution);
-  } catch (err) {
-    if (token === searchToken) grid.replaceChildren(emptyCell(`Search failed: ${err.message}`));
-  }
+  if (feed) feed.stop();
+  feed = infiniteResults(grid, {
+    provider,
+    key: state[provider.keyName],
+    term,
+    options: { type: state.pixabayType },
+    tile,
+    message: emptyCell,
+  });
+  status(provider.attribution);
 }
 
 function tile(item) {

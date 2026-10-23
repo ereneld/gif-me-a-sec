@@ -57,3 +57,4 @@ select { background: var(--card); border: 1px solid var(--line); border-radius: 
 
 footer { color: var(--muted); font-size: 11px; min-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hidden { display: none !important; }
+.grid .sentinel { grid-column: 1 / -1; min-height: 1px; text-align: center; color: var(--muted); font-size: 12px; }

@@ -1,5 +1,8 @@
-// GIF providers. Each returns [{ id, title, thumb, url }] where url is the
-// full-size GIF that gets downloaded and used as the camera.
+// GIF providers. search() returns one page: { items, next }, where each item is
+// { id, title, thumb, url } (url is the full-size GIF used as the camera) and
+// next is the cursor for the following page, or null at the end.
+
+export const PAGE_SIZE = 9;
 
 export const PROVIDERS = {
   giphy: {
@@ -8,19 +11,25 @@ export const PROVIDERS = {
     keyUrl: "https://developers.giphy.com/dashboard/",
     keyHelp: "Create a free app in the GIPHY developer dashboard and copy its API key.",
     attribution: "Powered by GIPHY",
-    async search(query, key) {
+    async search(query, key, { cursor = 0 } = {}) {
       const endpoint = query ? "search" : "trending";
-      const params = new URLSearchParams({ api_key: key, limit: "24", rating: "pg-13" });
+      const params = new URLSearchParams({ api_key: key, limit: PAGE_SIZE, offset: cursor, rating: "pg-13" });
       if (query) params.set("q", query);
       const res = await fetch(`https://api.giphy.com/v1/gifs/${endpoint}?${params}`);
       if (!res.ok) throw new Error(`GIPHY returned ${res.status}`);
       const body = await res.json();
-      return (body.data || []).map((g) => ({
-        id: g.id,
-        title: g.title || "GIPHY GIF",
-        thumb: (g.images.fixed_width_small || g.images.fixed_width || g.images.original).url,
-        url: (g.images.downsized_medium || g.images.original).url,
-      }));
+      const data = body.data || [];
+      const seen = cursor + data.length;
+      const total = body.pagination ? body.pagination.total_count : 0;
+      return {
+        items: data.map((g) => ({
+          id: g.id,
+          title: g.title || "GIPHY GIF",
+          thumb: (g.images.fixed_width_small || g.images.fixed_width || g.images.original).url,
+          url: (g.images.downsized_medium || g.images.original).url,
+        })),
+        next: data.length && seen < total ? seen : null,
+      };
     },
   },
   tenor: {
@@ -29,20 +38,21 @@ export const PROVIDERS = {
     keyUrl: "https://developers.google.com/tenor/guides/quickstart",
     keyHelp: "Enable the Tenor API in a Google Cloud project and create an API key.",
     attribution: "Powered by Tenor",
-    async search(query, key) {
+    async search(query, key, { cursor } = {}) {
       const endpoint = query ? "search" : "featured";
       const params = new URLSearchParams({
         key,
         client_key: "gifcam",
-        limit: "24",
+        limit: PAGE_SIZE,
         contentfilter: "medium",
         media_filter: "gif,mediumgif,tinygif",
       });
       if (query) params.set("q", query);
+      if (cursor) params.set("pos", cursor);
       const res = await fetch(`https://tenor.googleapis.com/v2/${endpoint}?${params}`);
       if (!res.ok) throw new Error(`Tenor returned ${res.status}`);
       const body = await res.json();
-      return (body.results || []).map((g) => {
+      const items = (body.results || []).map((g) => {
         const m = g.media_formats || {};
         return {
           id: g.id,
@@ -51,6 +61,7 @@ export const PROVIDERS = {
           url: (m.mediumgif || m.gif).url,
         };
       });
+      return { items, next: items.length && body.next ? body.next : null };
     },
   },
 };
@@ -79,13 +90,15 @@ PROVIDERS.pixabay = {
   keyHelp: "Sign up for free, then copy the key shown in the API docs.",
   attribution: "Images and videos from Pixabay",
   // options.type is "video" or "image".
-  async search(query, key, options = {}) {
-    const isVideo = options.type !== "image";
-    const params = new URLSearchParams({ key, per_page: "24", safesearch: "true" });
+  async search(query, key, { type, cursor = 1 } = {}) {
+    const isVideo = type !== "image";
+    const params = new URLSearchParams({ key, per_page: PAGE_SIZE, page: cursor, safesearch: "true" });
     if (query) params.set("q", query.slice(0, 100));
     const base = isVideo ? "https://pixabay.com/api/videos/" : "https://pixabay.com/api/";
     const body = await cachedJson(`${base}?${params}`);
-    return (body.hits || []).map((h) => {
+    const hits = body.hits || [];
+    const more = hits.length && cursor * PAGE_SIZE < (body.totalHits || 0);
+    const items = hits.map((h) => {
       const title = h.tags || "Pixabay";
       if (isVideo) {
         const v = h.videos.tiny && h.videos.tiny.url ? h.videos.tiny : h.videos.small;
@@ -93,6 +106,7 @@ PROVIDERS.pixabay = {
       }
       return { id: h.id, title, thumb: h.previewURL, url: h.webformatURL, kind: "image" };
     });
+    return { items, next: more ? cursor + 1 : null };
   },
 };
 
@@ -129,4 +143,58 @@ export function thumbnail(item) {
   img.alt = item.title;
   img.loading = "lazy";
   return img;
+}
+
+// Fills a scrolling grid page by page: the next page loads when the user
+// scrolls near the bottom. Returns { stop } to abandon it for a new search.
+export function infiniteResults(grid, { provider, key, term, options, tile, message }) {
+  let cursor;
+  let loading = false;
+  let done = false;
+  let stopped = false;
+  let count = 0;
+  const sentinel = document.createElement("div");
+  sentinel.className = "sentinel";
+  grid.replaceChildren(sentinel);
+  grid.scrollTop = 0;
+
+  // A hidden grid (e.g. the collapsed meeting panel) has no height; wait until it's shown.
+  const nearBottom = () =>
+    grid.clientHeight > 0 && sentinel.getBoundingClientRect().top - grid.getBoundingClientRect().bottom < 150;
+
+  async function load() {
+    if (loading || done || stopped) return;
+    loading = true;
+    sentinel.textContent = "Loading…";
+    try {
+      const page = await provider.search(term, key, { ...options, cursor });
+      if (stopped) return;
+      sentinel.before(...page.items.map(tile));
+      count += page.items.length;
+      cursor = page.next;
+      done = page.next == null;
+      if (!count) sentinel.before(message("No GIFs found."));
+    } catch (err) {
+      if (stopped) return;
+      done = true;
+      sentinel.before(message(`Search failed: ${err.message}`));
+    } finally {
+      loading = false;
+      sentinel.textContent = "";
+    }
+    // Keep going until the grid is full enough to scroll.
+    if (!done && !stopped && nearBottom()) load();
+  }
+
+  grid.addEventListener("scroll", onScroll, { passive: true });
+  function onScroll() {
+    if (nearBottom()) load();
+  }
+  load();
+  return {
+    stop() {
+      stopped = true;
+      grid.removeEventListener("scroll", onScroll);
+    },
+  };
 }
