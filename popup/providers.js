@@ -89,9 +89,44 @@ PROVIDERS.pixabay = {
       const title = h.tags || "Pixabay";
       if (isVideo) {
         const v = h.videos.tiny && h.videos.tiny.url ? h.videos.tiny : h.videos.small;
-        return { id: h.id, title, thumb: v.thumbnail, url: v.url, kind: "video", seconds: h.duration };
+        return { id: h.id, title, thumb: v.thumbnail, preview: v.url, url: v.url, kind: "video", seconds: h.duration };
       }
       return { id: h.id, title, thumb: h.previewURL, url: h.webformatURL, kind: "image" };
     });
   },
 };
+
+// Grid thumbnail: an <img> (GIFs animate on their own), or for videos a muted
+// looping <video> that only loads and plays while it's on screen.
+const visibility =
+  typeof IntersectionObserver !== "undefined" &&
+  new IntersectionObserver((entries) => {
+    for (const { target, isIntersecting } of entries) {
+      if (isIntersecting) {
+        if (!target.src) target.src = target.dataset.src;
+        target.play().catch(() => {});
+      } else {
+        target.pause();
+      }
+    }
+  });
+
+export function thumbnail(item) {
+  if (item.preview && visibility) {
+    const video = document.createElement("video");
+    video.dataset.src = item.preview;
+    video.poster = item.thumb;
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.preload = "none";
+    video.setAttribute("aria-label", item.title);
+    visibility.observe(video);
+    return video;
+  }
+  const img = document.createElement("img");
+  img.src = item.thumb;
+  img.alt = item.title;
+  img.loading = "lazy";
+  return img;
+}

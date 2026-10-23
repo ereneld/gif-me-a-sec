@@ -1,6 +1,6 @@
 // In-meeting quick panel: reaction shortcuts, search, and a 3-column grid.
 // Lives in an extension iframe so meeting-page CSP can't block it.
-import { PROVIDERS } from "../popup/providers.js";
+import { PROVIDERS, thumbnail } from "../popup/providers.js";
 import { storeRemoteImage, storeRemoteVideo } from "../popup/media.js";
 
 const $ = (id) => document.getElementById(id);
@@ -114,11 +114,7 @@ function tile(item) {
   const b = document.createElement("button");
   b.type = "button";
   b.title = item.title;
-  const img = document.createElement("img");
-  img.src = item.thumb;
-  img.alt = item.title;
-  img.loading = "lazy";
-  b.append(img);
+  b.append(thumbnail(item));
   if (item.kind === "video") {
     const badge = document.createElement("span");
     badge.className = "badge";

@@ -1,4 +1,4 @@
-import { PROVIDERS } from "./providers.js";
+import { PROVIDERS, thumbnail } from "./providers.js";
 import { storeImage, storeRemoteImage, storeRemoteVideo } from "./media.js";
 
 const $ = (id) => document.getElementById(id);
@@ -291,11 +291,7 @@ async function runSearch() {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.title = item.title;
-        const img = document.createElement("img");
-        img.src = item.thumb;
-        img.alt = item.title;
-        img.loading = "lazy";
-        btn.append(img);
+        btn.append(thumbnail(item));
         if (item.kind === "video") {
           const badge = document.createElement("span");
           badge.className = "badge";
