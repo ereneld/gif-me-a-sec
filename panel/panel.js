@@ -149,7 +149,7 @@ async function pick(item, button) {
     await chrome.storage.local.set({ enabled: true });
     state.enabled = true;
     if (!streams) {
-      status("Turn your camera off and on in the meeting to start GifCam.");
+      status("It will play when your camera is on. (Reload this tab if GifCam was just installed.)");
     } else if (state.mode === "still") {
       status("Showing a still frame.");
     } else {

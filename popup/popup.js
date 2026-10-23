@@ -3,7 +3,7 @@ import { storeImage, storeRemoteImage, storeRemoteVideo } from "./media.js";
 
 const $ = (id) => document.getElementById(id);
 const DEFAULTS = {
-  enabled: false,
+  enabled: true,
   mode: "animated",
   duration: 5,
   after: "camera",
@@ -53,10 +53,10 @@ function renderSettings() {
 
 function renderStatus(status) {
   let line;
-  if (!state.enabled) line = "Off. Your normal camera is used.";
-  else if (!state.gif) line = "On, but no GIF picked yet.";
-  else if (status && status.activeStreams > 0) line = `Live in this tab (${status.activeStreams} stream${status.activeStreams > 1 ? "s" : ""}).`;
-  else line = "On. Start or restart your camera in the meeting to use it.";
+  if (!state.enabled) line = "Off. Your camera shows as normal.";
+  else if (!state.gif) line = "On. Pick a GIF to play on your camera.";
+  else if (status && status.activeStreams > 0) line = "Playing on your camera in this tab.";
+  else line = "On. It plays when your camera starts, or when you pick a GIF.";
   $("statusLine").textContent = line;
 }
 
@@ -146,7 +146,7 @@ async function afterPick(gif, noun) {
   state.gif = gif;
   await renderPreview();
   renderSettings();
-  toast(state.enabled ? `${noun} selected` : `${noun} selected. Turn GifCam on to use it.`);
+  toast(state.enabled ? `${noun} selected, playing on your camera` : `${noun} selected. Turn GifCam on to use it.`);
 }
 
 async function useGif(buffer, meta) {

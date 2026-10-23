@@ -1,17 +1,13 @@
-// Page-world script: replaces camera streams from getUserMedia with a canvas
-// stream that plays the selected GIF. Settings arrive from bridge.js.
+// Page-world script: wraps camera tracks from getUserMedia so the selected GIF
+// can play over the real camera for a few seconds. Settings arrive from bridge.js.
 (() => {
   if (window.__gifcamInstalled) return;
   window.__gifcamInstalled = true;
 
   const TAG = "__gifcam__";
-  const VIRTUAL_ID = "gifcam-virtual-camera";
-  const VIRTUAL_LABEL = "GifCam (virtual camera)";
   const FPS = 30;
-  // Open the real camera this early so the switch from GIF to camera is instant.
-  const CAMERA_WARMUP_MS = 2000;
   const DEFAULTS = {
-    enabled: false,
+    enabled: true,
     mode: "animated", // "animated" | "still"
     duration: 5, // seconds the GIF animates before the "after" action
     after: "camera", // "camera" | "freeze" | "loop"
@@ -24,16 +20,12 @@
   if (!mediaDevices || !mediaDevices.getUserMedia) return;
 
   const originalGetUserMedia = mediaDevices.getUserMedia.bind(mediaDevices);
-  const originalEnumerateDevices = mediaDevices.enumerateDevices.bind(mediaDevices);
 
   let settings = { ...DEFAULTS };
   let frames = []; // [{ bitmap, duration }] duration in ms
   let totalDuration = 0;
   let decodeToken = 0;
   const sources = new Set();
-
-  let resolveFirstSettings;
-  const firstSettings = new Promise((resolve) => (resolveFirstSettings = resolve));
 
   // ---------------------------------------------------------------- messaging
 
@@ -70,15 +62,15 @@
     if (frameSet) await loadFrameSet(frameSet);
     else if (gifBuffer) await loadGif(gifBuffer, (settings.gif && settings.gif.mime) || "image/gif");
     else if (!settings.gif) setFrames([]);
-    resolveFirstSettings();
     sources.forEach((s) => s.restart());
+    notifyStreams();
   }
 
   post({ type: "hello" });
 
-  // Lets the bridge show the quick panel while a GifCam camera is live.
+  // Lets the bridge show the quick panel while a camera is live and GifCam is on.
   function notifyStreams() {
-    post({ type: "streams", count: sources.size });
+    post({ type: "streams", count: settings.enabled ? sources.size : 0 });
   }
 
   // ----------------------------------------------------------------- decoding
@@ -151,14 +143,16 @@
 
   // ------------------------------------------------------------------ ticking
 
+  // Only the canvas fallback needs a clock; the main path is driven by camera frames.
   // Workers keep ticking in background tabs, where setInterval is throttled.
   // Some pages forbid blob: workers via CSP, so fall back to setInterval.
   let ticker = null;
   function ensureTicker() {
     if (ticker) return;
     const tick = () => {
-      sources.forEach((s) => (s.isEnded() ? s.dispose() : s.draw()));
-      if (sources.size === 0) stopTicker();
+      let live = 0;
+      sources.forEach((s) => s.tick && (s.isEnded() ? s.dispose() : (s.tick(), live++)));
+      if (!live) stopTicker();
     };
     try {
       const code = `setInterval(() => postMessage(0), ${Math.round(1000 / FPS)});`;
@@ -166,8 +160,8 @@
       worker.onmessage = tick;
       worker.onerror = () => {
         worker.terminate();
-        ticker = { stop: () => clearInterval(id) };
         const id = setInterval(tick, 1000 / FPS);
+        ticker = { stop: () => clearInterval(id) };
       };
       ticker = { stop: () => worker.terminate() };
     } catch {
@@ -180,101 +174,82 @@
     ticker = null;
   }
 
-  // ------------------------------------------------------------ stream source
+  // ------------------------------------------------------------ camera filter
 
-  function pickDimension(value, fallback) {
-    if (typeof value === "number") return value;
-    if (value && typeof value === "object") {
-      return value.exact || value.ideal || value.max || value.min || fallback;
-    }
-    return fallback;
-  }
+  const nativeEnabled = Object.getOwnPropertyDescriptor(MediaStreamTrack.prototype, "enabled");
+  const canProcess =
+    typeof MediaStreamTrackProcessor !== "undefined" &&
+    typeof MediaStreamTrackGenerator !== "undefined" &&
+    typeof VideoFrame !== "undefined";
 
-  function stripVirtualDevice(videoConstraints) {
-    if (typeof videoConstraints !== "object") return videoConstraints;
-    const copy = { ...videoConstraints };
-    const id = copy.deviceId;
-    const wanted = id && typeof id === "object" ? id.exact || id.ideal : id;
-    if (wanted === VIRTUAL_ID || (Array.isArray(wanted) && wanted.includes(VIRTUAL_ID))) {
-      delete copy.deviceId;
-    }
-    return Object.keys(copy).length ? copy : true;
-  }
-
-  class GifSource {
-    constructor(videoConstraints) {
-      const vc = typeof videoConstraints === "object" ? videoConstraints : {};
-      this.width = Math.round(pickDimension(vc.width, 1280));
-      this.height = Math.round(pickDimension(vc.height, 720));
-      this.cameraConstraints = stripVirtualDevice(videoConstraints);
-      this.pickedVirtual = wantsVirtual(videoConstraints);
-      this.canvas = document.createElement("canvas");
-      this.canvas.width = this.width;
-      this.canvas.height = this.height;
-      this.ctx = this.canvas.getContext("2d");
-      this.stream = this.canvas.captureStream(FPS);
-      this.track = this.stream.getVideoTracks()[0];
-      this.camera = null; // { stream, video } while the real camera is shown
-      this.cameraPending = false;
+  // Wraps one real camera track. Camera frames pass straight through, except
+  // while a GIF is playing, when GIF frames are sent in their place.
+  class CameraFilter {
+    constructor(real) {
+      this.real = real;
       this.lastFrame = null;
-      this.disguiseTrack();
+      this.canvas = null;
+      this.ctx = null;
+      this.width = 0;
+      this.height = 0;
+      if (canProcess) {
+        this.output = new MediaStreamTrackGenerator({ kind: "video" });
+        this.pump();
+      } else {
+        this.setupCanvasFallback();
+      }
+      this.disguise();
       this.restart();
     }
 
-    disguiseTrack() {
-      const track = this.track;
-      const { width, height } = this;
-      const getSettings = track.getSettings.bind(track);
-      track.getSettings = () => ({
-        ...getSettings(),
-        deviceId: VIRTUAL_ID,
-        groupId: VIRTUAL_ID,
-        width,
-        height,
-        frameRate: FPS,
-      });
-      try {
-        Object.defineProperty(track, "label", { value: VIRTUAL_LABEL });
-      } catch {}
-      const stop = track.stop.bind(track);
-      track.stop = () => {
+    // The page should see its own camera: same label, settings and controls.
+    disguise() {
+      const { real, output } = this;
+      const own = (name, value) => Object.defineProperty(output, name, { value, configurable: true });
+      own("label", real.label);
+      own("getSettings", () => real.getSettings());
+      own("getCapabilities", () => (real.getCapabilities ? real.getCapabilities() : {}));
+      own("getConstraints", () => real.getConstraints());
+      own("applyConstraints", (c) => real.applyConstraints(c));
+      const stop = output.stop.bind(output);
+      own("stop", () => {
         stop();
+        real.stop();
         this.dispose();
-      };
+      });
+      Object.defineProperty(output, "enabled", {
+        configurable: true,
+        get: () => nativeEnabled.get.call(output),
+        set: (v) => {
+          nativeEnabled.set.call(output, v);
+          real.enabled = v;
+        },
+      });
     }
 
     restart() {
       this.startedAt = performance.now();
       this.lastFrame = null;
-      this.stopCamera();
-      this.draw();
     }
 
     isEnded() {
-      return this.track.readyState === "ended";
+      return this.real.readyState === "ended";
     }
 
-    phase(elapsed) {
-      // Turning GifCam off mid-call hands the stream back to the real camera.
-      if (!settings.enabled && !this.pickedVirtual) return "camera";
-      if (!frames.length && settings.after === "camera" && !this.pickedVirtual) return "camera";
-      if (settings.mode === "still") return "still";
-      if (settings.after === "loop" || elapsed < settings.duration * 1000) return "gif";
-      return settings.after === "camera" ? "camera" : "freeze";
-    }
-
-    wantsCamera(elapsed) {
-      if (this.phase(elapsed) === "camera") return true;
-      return (
-        settings.enabled &&
-        settings.mode === "animated" &&
-        settings.after === "camera" &&
-        elapsed >= settings.duration * 1000 - CAMERA_WARMUP_MS
-      );
+    // Which GIF frame to show right now, or null for the camera.
+    gifFrame() {
+      if (!settings.enabled || !frames.length) return null;
+      const elapsed = performance.now() - this.startedAt;
+      const playing = settings.after === "loop" || elapsed < settings.duration * 1000;
+      if (playing) {
+        this.lastFrame = settings.mode === "still" ? frames[0] : this.frameAt(elapsed);
+        return this.lastFrame;
+      }
+      if (settings.after === "freeze") return this.lastFrame || this.frameAt(settings.duration * 1000);
+      return null;
     }
 
     frameAt(elapsed) {
-      if (!frames.length) return null;
       if (frames.length === 1 || totalDuration <= 0) return frames[0];
       let t = elapsed % totalDuration;
       for (const f of frames) {
@@ -284,32 +259,66 @@
       return frames[frames.length - 1];
     }
 
-    draw() {
-      const elapsed = performance.now() - this.startedAt;
-      const phase = this.phase(elapsed);
+    ensureCanvas(width, height) {
+      if (!this.canvas) {
+        this.canvas =
+          typeof OffscreenCanvas !== "undefined" && canProcess
+            ? new OffscreenCanvas(width, height)
+            : document.createElement("canvas");
+        this.ctx = this.canvas.getContext("2d");
+      }
+      if (this.width !== width || this.height !== height) {
+        this.canvas.width = this.width = width;
+        this.canvas.height = this.height = height;
+        this.backdrop = null;
+      }
+    }
 
-      if (this.wantsCamera(elapsed)) this.startCamera();
-      else this.stopCamera();
-
-      if (phase === "camera") {
-        const video = this.camera && this.camera.video;
-        if (video && video.readyState >= 2) {
-          this.paint(video, video.videoWidth, video.videoHeight);
-          return;
+    async pump() {
+      const reader = new MediaStreamTrackProcessor({ track: this.real }).readable.getReader();
+      const writer = this.output.writable.getWriter();
+      try {
+        for (;;) {
+          const { value: frame, done } = await reader.read();
+          if (done) break;
+          const gif = this.gifFrame();
+          if (!gif) {
+            await writer.write(frame);
+            continue;
+          }
+          this.ensureCanvas(frame.displayWidth, frame.displayHeight);
+          this.paint(gif.bitmap, gif.bitmap.width, gif.bitmap.height);
+          const out = new VideoFrame(this.canvas, { timestamp: frame.timestamp });
+          frame.close();
+          await writer.write(out);
         }
+      } catch (err) {
+        if (!this.isEnded()) console.warn("[GifCam] camera filter stopped:", err);
+      } finally {
+        this.output.stop();
+        this.dispose();
       }
+    }
 
-      let frame;
-      if (phase === "still") frame = frames[0];
-      else if (phase === "gif") frame = this.frameAt(elapsed);
-      else frame = this.lastFrame || this.frameAt(settings.duration * 1000);
-
-      if (frame) {
-        if (phase === "gif") this.lastFrame = frame;
-        this.paint(frame.bitmap, frame.bitmap.width, frame.bitmap.height);
-      } else {
-        this.paintPlaceholder();
-      }
+    // Older browsers: draw the camera (or GIF) onto a canvas and capture it.
+    setupCanvasFallback() {
+      const s = this.real.getSettings();
+      this.ensureCanvas(s.width || 1280, s.height || 720);
+      this.video = document.createElement("video");
+      this.video.muted = true;
+      this.video.playsInline = true;
+      this.video.srcObject = new MediaStream([this.real]);
+      this.video.play().catch(() => {});
+      this.output = this.canvas.captureStream(FPS).getVideoTracks()[0];
+      this.tick = () => {
+        const gif = this.gifFrame();
+        if (gif) this.paint(gif.bitmap, gif.bitmap.width, gif.bitmap.height);
+        else if (this.video.readyState >= 2) {
+          this.ensureCanvas(this.video.videoWidth, this.video.videoHeight);
+          this.ctx.drawImage(this.video, 0, 0, this.width, this.height);
+        }
+      };
+      ensureTicker();
     }
 
     paint(source, sw, sh) {
@@ -324,7 +333,7 @@
       };
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, W, H);
-      if (settings.fit === "cover" || source instanceof HTMLVideoElement) {
+      if (settings.fit === "cover") {
         drawScaled(cover);
         return;
       }
@@ -349,115 +358,36 @@
       return canvas;
     }
 
-    paintPlaceholder() {
-      const { ctx, width: W, height: H } = this;
-      ctx.fillStyle = "#1f1b2e";
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = "#c4b5fd";
-      ctx.font = `bold ${Math.round(H / 12)}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("GifCam: pick a GIF in the extension", W / 2, H / 2);
-    }
-
-    async startCamera() {
-      if (this.camera || this.cameraPending) return;
-      this.cameraPending = true;
-      try {
-        const stream = await originalGetUserMedia({ video: this.cameraConstraints });
-        if (this.isEnded() || !this.wantsCamera(performance.now() - this.startedAt)) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        const video = document.createElement("video");
-        video.muted = true;
-        video.playsInline = true;
-        video.srcObject = stream;
-        await video.play().catch(() => {});
-        this.camera = { stream, video };
-      } catch (err) {
-        console.warn("[GifCam] Could not open the real camera:", err);
-        settings = { ...settings, after: "freeze" };
-      } finally {
-        this.cameraPending = false;
-      }
-    }
-
-    stopCamera() {
-      if (!this.camera) return;
-      this.camera.stream.getTracks().forEach((t) => t.stop());
-      this.camera.video.srcObject = null;
-      this.camera = null;
-    }
-
     dispose() {
-      this.stopCamera();
+      if (this.video) this.video.srcObject = null;
       if (sources.delete(this)) notifyStreams();
     }
   }
 
-  // ---------------------------------------------------------------- overrides
+  // ---------------------------------------------------------------- override
 
-  function wantsVirtual(videoConstraints) {
-    if (!videoConstraints || typeof videoConstraints !== "object") return false;
-    const id = videoConstraints.deviceId;
-    const wanted = id && typeof id === "object" ? id.exact || id.ideal : id;
-    return wanted === VIRTUAL_ID || (Array.isArray(wanted) && wanted.includes(VIRTUAL_ID));
-  }
-
-  async function shouldUseGif(constraints) {
-    if (!constraints || !constraints.video) return false;
-    await Promise.race([firstSettings, new Promise((r) => setTimeout(r, 1500))]);
-    return settings.enabled || wantsVirtual(constraints.video);
-  }
-
+  // Every camera track is wrapped (whether GifCam is on or not), so turning
+  // GifCam on or off takes effect instantly without restarting the camera.
   async function getUserMedia(constraints) {
-    if (!(await shouldUseGif(constraints))) return originalGetUserMedia(constraints);
-
-    const source = new GifSource(constraints.video);
-    sources.add(source);
-    notifyStreams();
-    ensureTicker();
-
-    const tracks = [source.track];
-    if (constraints.audio) {
-      try {
-        const audio = await originalGetUserMedia({ audio: constraints.audio });
-        tracks.push(...audio.getAudioTracks());
-      } catch (err) {
-        source.track.stop();
-        throw err;
-      }
+    const stream = await originalGetUserMedia(constraints);
+    const videoTracks = stream.getVideoTracks();
+    if (!videoTracks.length) return stream;
+    try {
+      const wrapped = videoTracks.map((real) => {
+        const filter = new CameraFilter(real);
+        sources.add(filter);
+        return filter.output;
+      });
+      notifyStreams();
+      return new MediaStream([...stream.getAudioTracks(), ...wrapped]);
+    } catch (err) {
+      console.warn("[GifCam] couldn't wrap the camera, using it directly:", err);
+      return stream;
     }
-    return new MediaStream(tracks);
   }
 
-  async function enumerateDevices() {
-    const devices = await originalEnumerateDevices();
-    await Promise.race([firstSettings, new Promise((r) => setTimeout(r, 500))]);
-    if (!settings.enabled) return devices;
-    const virtual = {
-      deviceId: VIRTUAL_ID,
-      groupId: VIRTUAL_ID,
-      kind: "videoinput",
-      label: VIRTUAL_LABEL,
-      getCapabilities() {
-        return { deviceId: VIRTUAL_ID, groupId: VIRTUAL_ID, width: { min: 1, max: 1920 }, height: { min: 1, max: 1080 } };
-      },
-      toJSON() {
-        return { deviceId: this.deviceId, groupId: this.groupId, kind: this.kind, label: this.label };
-      },
-    };
-    if (typeof InputDeviceInfo !== "undefined") Object.setPrototypeOf(virtual, InputDeviceInfo.prototype);
-    return [virtual, ...devices];
-  }
-
-  // Keep the overrides looking native to sites that inspect them.
-  const nativeLike = (fn, name) => {
-    Object.defineProperty(fn, "name", { value: name });
-    fn.toString = () => `function ${name}() { [native code] }`;
-    return fn;
-  };
-  mediaDevices.getUserMedia = nativeLike(getUserMedia, "getUserMedia");
-  mediaDevices.enumerateDevices = nativeLike(enumerateDevices, "enumerateDevices");
+  // Keep the override looking native to sites that inspect it.
+  Object.defineProperty(getUserMedia, "name", { value: "getUserMedia" });
+  getUserMedia.toString = () => "function getUserMedia() { [native code] }";
+  mediaDevices.getUserMedia = getUserMedia;
 })();

@@ -2,7 +2,7 @@
 chrome.commands.onCommand.addListener(async (command) => {
   if (command === "toggle-gifcam") {
     const { enabled } = await chrome.storage.local.get("enabled");
-    await chrome.storage.local.set({ enabled: !enabled });
+    await chrome.storage.local.set({ enabled: enabled === false });
     return;
   }
   if (command === "toggle-panel") {
