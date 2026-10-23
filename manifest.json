@@ -43,6 +43,12 @@
         "default": "Alt+Shift+C"
       },
       "description": "Turn GifCam on or off"
+    },
+    "toggle-panel": {
+      "suggested_key": {
+        "default": "Alt+Shift+Q"
+      },
+      "description": "Show or hide the GIF quick panel on this page"
     }
   },
   "icons": {
@@ -73,5 +79,16 @@
       "run_at": "document_start",
       "all_frames": true
     }
-  ]
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "panel/panel.html"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "options_page": "popup/popup.html"
 }

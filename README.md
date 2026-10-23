@@ -2,9 +2,10 @@
 
 A Chrome extension that uses a GIF as your camera in Google Meet, Zoom (web), Microsoft Teams (web), Whereby, Discord and any other site that asks for your webcam.
 
-- **Animated**: the GIF plays for a set time (5 seconds by default, adjustable), then freezes on the last frame, switches to your real camera, or keeps looping.
+- **Animated**: the GIF plays for a set time (5 seconds by default, adjustable), then switches to your real camera (the default), freezes on the last frame, or keeps looping. The camera is opened two seconds early so the switch is instant.
 - **Still frame**: shows a single frame as a static picture.
 - **Pick GIFs** from GIPHY or Tenor search, Pixabay videos and images, a direct link, or an uploaded file (GIF, WebP, PNG, JPEG). Pixabay videos are converted to a 10-second, 10 fps clip in the popup.
+- **Quick panel in meetings**: while GifCam is your camera, a small GIF button sits in the corner of the meeting page. It opens reaction shortcuts (wow, lol, applause, bye…), a search box and a scrollable 3-column grid. One click plays that GIF, then hands back to your camera.
 - **Live controls**: change settings mid-call, replay the GIF, or turn GifCam off to hand the stream back to your real camera without rejoining.
 
 ## Install (developer mode)
@@ -24,12 +25,13 @@ Keyboard shortcuts (change them at `chrome://extensions/shortcuts`):
 
 | Shortcut | Action |
 | --- | --- |
+| Alt+Shift+Q | Show the GIF quick panel on this page |
 | Alt+Shift+G | Replay the GIF in the current tab |
 | Alt+Shift+C | Turn GifCam on or off |
 
 ## API keys
 
-- **GIPHY**: create a free app at [developers.giphy.com](https://developers.giphy.com/dashboard/) and paste its API key into the popup under **API keys**.
+- **GIPHY**: create a free app at [developers.giphy.com](https://developers.giphy.com/dashboard/) and paste its API key under **Settings** (the gear in the popup).
 - **Tenor**: enable the Tenor API in a Google Cloud project and create an API key ([quickstart](https://developers.google.com/tenor/guides/quickstart)).
 
 - **Pixabay**: sign in at [pixabay.com](https://pixabay.com/api/docs/) and copy the key shown in the API docs. Search results are cached for 24 hours, as Pixabay asks.
@@ -40,6 +42,7 @@ Keys are stored only in your browser (`chrome.storage.local`).
 
 - `src/inject.js` runs in the page at `document_start` and wraps `navigator.mediaDevices.getUserMedia` and `enumerateDevices`. When GifCam is on, a video request gets a `canvas.captureStream()` track that plays the GIF; audio still comes from your real microphone.
 - GIF frames are decoded with the WebCodecs `ImageDecoder` API, so frame timing matches the original GIF.
+- `panel/` is the in-meeting quick panel. It runs in an extension iframe, so the meeting page's security policy can't block its thumbnails or searches.
 - `src/bridge.js` passes your settings and the selected GIF from extension storage to the page, and relays Replay from the popup.
 - The canvas keeps a single track for the whole call, so switching between GIF, still frame and real camera needs no renegotiation with the meeting.
 

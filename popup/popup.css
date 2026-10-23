@@ -78,9 +78,16 @@ button:disabled { opacity: .5; cursor: default; }
 .drop { display: block; border: 1px dashed var(--line); border-radius: 8px; padding: 18px; text-align: center; color: var(--muted); cursor: pointer; }
 .drop input { display: none; }
 
-.keys summary { cursor: pointer; color: var(--muted); }
-.keys label { display: grid; gap: 4px; margin-top: 8px; color: var(--muted); }
-.keys a { color: var(--accent); font-size: 11px; }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.icon-btn { background: transparent; color: var(--muted); font-size: 17px; padding: 2px 6px; line-height: 1; }
+.icon-btn:hover { color: var(--fg); background: var(--card); }
+.settings { display: grid; gap: 6px; border-bottom: 0; }
+.settings-head { display: flex; align-items: center; gap: 10px; }
+.settings h2 { font-size: 15px; margin: 0; }
+.settings h3 { font-size: 13px; margin: 10px 0 0; }
+.settings label { display: grid; gap: 4px; margin-top: 6px; color: var(--muted); }
+.settings a { color: var(--accent); font-size: 11px; }
+.notice button { margin-top: 6px; display: block; }
 
 .toast { position: fixed; left: 14px; right: 14px; bottom: 10px; background: var(--fg); color: var(--bg); padding: 8px 10px; border-radius: 6px; }
 .hidden { display: none !important; }
@@ -89,3 +96,4 @@ button:disabled { opacity: .5; cursor: default; }
 .grid button { position: relative; }
 .progress { height: 4px; background: var(--card); border-radius: 4px; margin-top: 8px; overflow: hidden; }
 .progress div { height: 100%; width: 0; background: var(--accent); transition: width .1s; }
+.settings label.check { display: flex; align-items: center; gap: 8px; color: var(--fg); }

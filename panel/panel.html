@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>GifCam quick panel</title>
+  <link rel="stylesheet" href="panel.css" />
+</head>
+<body>
+  <button type="button" id="launcher" class="launcher" title="GifCam reactions (Alt+Shift+Q)">GIF</button>
+
+  <div id="panel" class="panel hidden">
+    <header>
+      <span class="brand">GifCam</span>
+      <select id="provider" title="GIF source"></select>
+      <button type="button" id="collapse" class="icon" title="Minimize">–</button>
+    </header>
+    <div class="chips" id="chips"></div>
+    <form id="searchForm" class="search">
+      <input type="search" id="query" placeholder="Search GIFs" autocomplete="off" />
+    </form>
+    <div class="grid" id="grid"></div>
+    <footer id="status"></footer>
+  </div>
+
+  <script src="panel.js" type="module"></script>
+</body>
+</html>

@@ -8,11 +8,13 @@
   const VIRTUAL_ID = "gifcam-virtual-camera";
   const VIRTUAL_LABEL = "GifCam (virtual camera)";
   const FPS = 30;
+  // Open the real camera this early so the switch from GIF to camera is instant.
+  const CAMERA_WARMUP_MS = 2000;
   const DEFAULTS = {
     enabled: false,
     mode: "animated", // "animated" | "still"
     duration: 5, // seconds the GIF animates before the "after" action
-    after: "freeze", // "freeze" | "camera" | "loop"
+    after: "camera", // "camera" | "freeze" | "loop"
     fit: "contain", // "contain" | "cover"
     background: "blur", // "blur" | "black"
     gif: null,
@@ -73,6 +75,11 @@
   }
 
   post({ type: "hello" });
+
+  // Lets the bridge show the quick panel while a GifCam camera is live.
+  function notifyStreams() {
+    post({ type: "streams", count: sources.size });
+  }
 
   // ----------------------------------------------------------------- decoding
 
@@ -250,9 +257,20 @@
     phase(elapsed) {
       // Turning GifCam off mid-call hands the stream back to the real camera.
       if (!settings.enabled && !this.pickedVirtual) return "camera";
+      if (!frames.length && settings.after === "camera" && !this.pickedVirtual) return "camera";
       if (settings.mode === "still") return "still";
       if (settings.after === "loop" || elapsed < settings.duration * 1000) return "gif";
       return settings.after === "camera" ? "camera" : "freeze";
+    }
+
+    wantsCamera(elapsed) {
+      if (this.phase(elapsed) === "camera") return true;
+      return (
+        settings.enabled &&
+        settings.mode === "animated" &&
+        settings.after === "camera" &&
+        elapsed >= settings.duration * 1000 - CAMERA_WARMUP_MS
+      );
     }
 
     frameAt(elapsed) {
@@ -270,15 +288,15 @@
       const elapsed = performance.now() - this.startedAt;
       const phase = this.phase(elapsed);
 
+      if (this.wantsCamera(elapsed)) this.startCamera();
+      else this.stopCamera();
+
       if (phase === "camera") {
-        this.startCamera();
         const video = this.camera && this.camera.video;
         if (video && video.readyState >= 2) {
           this.paint(video, video.videoWidth, video.videoHeight);
           return;
         }
-      } else {
-        this.stopCamera();
       }
 
       let frame;
@@ -347,7 +365,7 @@
       this.cameraPending = true;
       try {
         const stream = await originalGetUserMedia({ video: this.cameraConstraints });
-        if (this.isEnded() || this.phase(performance.now() - this.startedAt) !== "camera") {
+        if (this.isEnded() || !this.wantsCamera(performance.now() - this.startedAt)) {
           stream.getTracks().forEach((t) => t.stop());
           return;
         }
@@ -374,7 +392,7 @@
 
     dispose() {
       this.stopCamera();
-      sources.delete(this);
+      if (sources.delete(this)) notifyStreams();
     }
   }
 
@@ -398,6 +416,7 @@
 
     const source = new GifSource(constraints.video);
     sources.add(source);
+    notifyStreams();
     ensureTicker();
 
     const tracks = [source.track];

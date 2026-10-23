@@ -1,12 +1,12 @@
 import { PROVIDERS } from "./providers.js";
+import { storeImage, storeRemoteImage, storeRemoteVideo } from "./media.js";
 
 const $ = (id) => document.getElementById(id);
-const MAX_BYTES = 20 * 1024 * 1024;
 const DEFAULTS = {
   enabled: false,
   mode: "animated",
   duration: 5,
-  after: "freeze",
+  after: "camera",
   fit: "contain",
   background: "blur",
   gif: null,
@@ -14,6 +14,7 @@ const DEFAULTS = {
   tenorKey: "",
   pixabayKey: "",
   pixabayType: "video",
+  showPanel: true,
   tab: "giphy",
 };
 
@@ -44,6 +45,7 @@ function renderSettings() {
   $("tenorKey").value = state.tenorKey || "";
   $("pixabayKey").value = state.pixabayKey || "";
   $("pixabayType").value = state.pixabayType;
+  $("showPanel").checked = state.showPanel !== false;
   document.querySelectorAll(".animated-only").forEach((el) => el.classList.toggle("hidden", state.mode !== "animated"));
   document.querySelectorAll(".contain-only").forEach((el) => el.classList.toggle("hidden", state.fit !== "contain"));
   renderStatus();
@@ -101,7 +103,19 @@ async function queryTabStatus() {
   }
 }
 
+function showSettings(open) {
+  $("mainView").classList.toggle("hidden", open);
+  $("settingsView").classList.toggle("hidden", !open);
+  if (!open) runSearch();
+}
+
 function bindSettings() {
+  $("openSettings").addEventListener("click", () => showSettings($("settingsView").classList.contains("hidden")));
+  $("closeSettings").addEventListener("click", () => showSettings(false));
+  $("shortcutsLink").addEventListener("click", (e) => {
+    e.preventDefault();
+    chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+  });
   $("enabled").addEventListener("change", (e) => save({ enabled: e.target.checked }).then(renderSettings));
   document.querySelectorAll("input[name=mode]").forEach((el) =>
     el.addEventListener("change", (e) => save({ mode: e.target.value }).then(renderSettings))
@@ -113,9 +127,10 @@ function bindSettings() {
   for (const id of ["after", "fit", "background"]) {
     $(id).addEventListener("change", (e) => save({ [id]: e.target.value }).then(renderSettings));
   }
+  $("showPanel").addEventListener("change", (e) => save({ showPanel: e.target.checked }));
   $("pixabayType").addEventListener("change", (e) => save({ pixabayType: e.target.value }).then(() => runSearch()));
   for (const id of ["giphyKey", "tenorKey", "pixabayKey"]) {
-    $(id).addEventListener("change", (e) => save({ [id]: e.target.value.trim() }).then(() => runSearch()));
+    $(id).addEventListener("change", (e) => save({ [id]: e.target.value.trim() }).then(() => toast("Key saved")));
   }
   $("replay").addEventListener("click", async () => {
     const tab = await activeTab();
@@ -127,90 +142,27 @@ function bindSettings() {
 
 // ------------------------------------------------------------- choosing GIFs
 
-function bufferToBase64(buffer) {
-  const bytes = new Uint8Array(buffer);
-  let bin = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-  }
-  return btoa(bin);
-}
-
-function sniffMime(buffer, fallback) {
-  const b = new Uint8Array(buffer.slice(0, 12));
-  const ascii = String.fromCharCode(...b);
-  if (ascii.startsWith("GIF8")) return "image/gif";
-  if (ascii.startsWith("RIFF") && ascii.slice(8, 12) === "WEBP") return "image/webp";
-  if (b[0] === 0x89 && ascii.slice(1, 4) === "PNG") return "image/png";
-  if (b[0] === 0xff && b[1] === 0xd8) return "image/jpeg";
-  return fallback || "image/gif";
-}
-
-async function useGif(buffer, meta) {
-  if (buffer.byteLength > MAX_BYTES) {
-    toast("That file is over 20 MB. Pick a smaller GIF.");
-    return;
-  }
-  const mime = sniffMime(buffer, meta.mime);
-  if (!mime.startsWith("image/")) {
-    toast("That doesn't look like an image.");
-    return;
-  }
-  const gif = { title: meta.title, source: meta.source, url: meta.url || null, mime };
-  await chrome.storage.local.set({ gif, gifData: bufferToBase64(buffer) });
-  await chrome.storage.local.remove("gifFrames");
+async function afterPick(gif, noun) {
   state.gif = gif;
   await renderPreview();
   renderSettings();
-  toast(state.enabled ? "GIF selected" : "GIF selected. Turn GifCam on to use it.");
+  toast(state.enabled ? `${noun} selected` : `${noun} selected. Turn GifCam on to use it.`);
+}
+
+async function useGif(buffer, meta) {
+  try {
+    await afterPick(await storeImage(buffer, meta), "GIF");
+  } catch (err) {
+    toast(`Couldn't use that file (${err.message}).`);
+  }
 }
 
 async function useRemoteGif(url, meta) {
   toast("Downloading GIF…", 10000);
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    await useGif(await res.arrayBuffer(), { ...meta, url, mime: res.headers.get("content-type") });
+    await afterPick(await storeRemoteImage(url, meta), "GIF");
   } catch (err) {
-    toast(`Couldn't download that GIF (${err.message}).`);
-  }
-}
-
-// Video can't be decoded inside meeting pages reliably (CSP, codecs), so we
-// capture it here as JPEG frames that the camera plays like a GIF.
-const VIDEO_FPS = 10;
-const VIDEO_MAX_SECONDS = 10;
-
-async function captureVideoFrames(blob, onProgress) {
-  const url = URL.createObjectURL(blob);
-  const video = document.createElement("video");
-  video.muted = true;
-  video.preload = "auto";
-  video.src = url;
-  try {
-    await new Promise((resolve, reject) => {
-      video.onloadeddata = resolve;
-      video.onerror = () => reject(new Error("this browser can't play that video"));
-    });
-    const seconds = Math.min(video.duration || VIDEO_MAX_SECONDS, VIDEO_MAX_SECONDS);
-    const scale = Math.min(1, 640 / Math.max(video.videoWidth, video.videoHeight));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(video.videoWidth * scale);
-    canvas.height = Math.round(video.videoHeight * scale);
-    const ctx = canvas.getContext("2d");
-    const count = Math.max(1, Math.floor(seconds * VIDEO_FPS));
-    const frames = [];
-    for (let i = 0; i < count; i++) {
-      video.currentTime = i / VIDEO_FPS;
-      await new Promise((resolve) => (video.onseeked = resolve));
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const jpeg = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.8));
-      frames.push(bufferToBase64(await jpeg.arrayBuffer()));
-      onProgress((i + 1) / count);
-    }
-    return { frameMs: 1000 / VIDEO_FPS, frames };
-  } finally {
-    URL.revokeObjectURL(url);
+    toast(`Couldn't use that GIF (${err.message}).`);
   }
 }
 
@@ -221,16 +173,8 @@ async function useRemoteVideo(url, meta) {
   bar.classList.remove("hidden");
   fill.style.width = "0";
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const gifFrames = await captureVideoFrames(await res.blob(), (p) => (fill.style.width = `${Math.round(p * 100)}%`));
-    const gif = { title: meta.title, source: meta.source, url, mime: "image/jpeg", kind: "video" };
-    await chrome.storage.local.set({ gif, gifFrames });
-    await chrome.storage.local.remove("gifData");
-    state.gif = gif;
-    await renderPreview();
-    renderSettings();
-    toast(state.enabled ? "Video selected" : "Video selected. Turn GifCam on to use it.");
+    const gif = await storeRemoteVideo(url, meta, (p) => (fill.style.width = `${Math.round(p * 100)}%`));
+    await afterPick(gif, "Video");
   } catch (err) {
     toast(`Couldn't use that video (${err.message}).`);
   } finally {
@@ -260,9 +204,15 @@ async function runSearch() {
 
   if (!key) {
     results.replaceChildren();
-    notice.textContent = `Add a ${provider.name} API key under "API keys" below to search ${provider.name}. You can still use the URL or Upload tabs without one.`;
+    const open = document.createElement("button");
+    open.type = "button";
+    open.textContent = "Open settings";
+    open.addEventListener("click", () => showSettings(true));
+    notice.replaceChildren(
+      `Add a ${provider.name} API key in Settings to search ${provider.name}. The URL and Upload tabs work without one.`,
+      open
+    );
     notice.classList.remove("hidden");
-    document.querySelector(".keys").open = true;
     return;
   }
   notice.classList.add("hidden");
@@ -347,5 +297,6 @@ function bindPicker() {
   renderSettings();
   renderPreview();
   showTab(state.tab);
+  if (location.hash === "#settings") showSettings(true);
   queryTabStatus();
 })();
