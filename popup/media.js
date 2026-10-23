@@ -31,7 +31,8 @@ export async function storeImage(buffer, meta) {
   if (buffer.byteLength > MAX_BYTES) throw new Error("that file is over 20 MB");
   const mime = sniffMime(buffer, meta.mime);
   if (!mime.startsWith("image/")) throw new Error("that doesn't look like an image");
-  const gif = { title: meta.title, source: meta.source, url: meta.url || null, mime };
+  // pickedAt makes picking the same GIF again a change, so it restarts.
+  const gif = { title: meta.title, source: meta.source, url: meta.url || null, mime, pickedAt: Date.now() };
   await chrome.storage.local.set({ gif, gifData: bufferToBase64(buffer) });
   await chrome.storage.local.remove("gifFrames");
   return gif;
@@ -80,7 +81,7 @@ export async function storeRemoteVideo(url, meta, onProgress = () => {}) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`download failed, HTTP ${res.status}`);
   const gifFrames = await captureVideoFrames(await res.blob(), onProgress);
-  const gif = { title: meta.title, source: meta.source, url, mime: "image/jpeg", kind: "video" };
+  const gif = { title: meta.title, source: meta.source, url, mime: "image/jpeg", kind: "video", pickedAt: Date.now() };
   await chrome.storage.local.set({ gif, gifFrames });
   await chrome.storage.local.remove("gifData");
   return gif;
