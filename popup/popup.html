@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>GifCam</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <div class="brand"><img src="../icons/icon32.png" alt="" /> GifCam</div>
+    <label class="switch" title="Use the GIF as your camera">
+      <input type="checkbox" id="enabled" />
+      <span class="slider"></span>
+    </label>
+  </header>
+
+  <section class="current">
+    <div class="preview" id="preview"><span>No GIF selected</span></div>
+    <div class="current-info">
+      <div class="title" id="gifTitle">Pick a GIF below</div>
+      <div class="hint" id="statusLine">Off. Turn on, then start (or restart) your camera in the meeting.</div>
+      <button id="replay" class="secondary" type="button">Replay GIF in this tab</button>
+    </div>
+  </section>
+
+  <section class="options">
+    <div class="row">
+      <span class="label">Mode</span>
+      <div class="segmented" role="radiogroup">
+        <label><input type="radio" name="mode" value="animated" checked /><span>Animated</span></label>
+        <label><input type="radio" name="mode" value="still" /><span>Still frame</span></label>
+      </div>
+    </div>
+    <div class="row animated-only">
+      <label class="label" for="duration">Play for</label>
+      <div class="inline"><input type="number" id="duration" min="0.5" max="3600" step="0.5" value="5" /> sec</div>
+    </div>
+    <div class="row animated-only">
+      <label class="label" for="after">Then</label>
+      <select id="after">
+        <option value="freeze">Freeze on the last frame</option>
+        <option value="camera">Switch to my real camera</option>
+        <option value="loop">Keep looping</option>
+      </select>
+    </div>
+    <div class="row">
+      <label class="label" for="fit">Fit</label>
+      <select id="fit">
+        <option value="contain">Fit inside (letterbox)</option>
+        <option value="cover">Fill and crop</option>
+      </select>
+    </div>
+    <div class="row contain-only">
+      <label class="label" for="background">Bars</label>
+      <select id="background">
+        <option value="blur">Blurred GIF</option>
+        <option value="black">Black</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="picker">
+    <nav class="tabs">
+      <button type="button" data-tab="giphy" class="active">GIPHY</button>
+      <button type="button" data-tab="tenor">Tenor</button>
+      <button type="button" data-tab="url">URL</button>
+      <button type="button" data-tab="upload">Upload</button>
+    </nav>
+
+    <div class="tab-panel" data-panel="search">
+      <form id="searchForm" class="search">
+        <input type="search" id="query" placeholder="Search GIFs (empty = trending)" />
+        <button type="submit">Search</button>
+      </form>
+      <div id="keyNotice" class="notice hidden"></div>
+      <div id="results" class="grid"></div>
+      <div id="attribution" class="attribution"></div>
+    </div>
+
+    <div class="tab-panel hidden" data-panel="url">
+      <form id="urlForm" class="search">
+        <input type="url" id="gifUrl" placeholder="https://…/funny.gif" required />
+        <button type="submit">Use</button>
+      </form>
+      <p class="hint">Direct link to a .gif, .webp, .png or .jpg file.</p>
+    </div>
+
+    <div class="tab-panel hidden" data-panel="upload">
+      <label class="drop" for="file">
+        <input type="file" id="file" accept="image/gif,image/webp,image/png,image/jpeg,image/apng" />
+        Choose a GIF or image from your computer
+      </label>
+    </div>
+  </section>
+
+  <details class="keys">
+    <summary>API keys</summary>
+    <label>GIPHY API key <a href="https://developers.giphy.com/dashboard/" target="_blank" rel="noopener">get one</a>
+      <input type="text" id="giphyKey" autocomplete="off" spellcheck="false" />
+    </label>
+    <label>Tenor (Google Cloud) API key <a href="https://developers.google.com/tenor/guides/quickstart" target="_blank" rel="noopener">get one</a>
+      <input type="text" id="tenorKey" autocomplete="off" spellcheck="false" />
+    </label>
+  </details>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

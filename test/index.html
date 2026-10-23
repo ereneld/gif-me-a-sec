@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>GifCam test page</title>
+  <style>
+    body { font: 14px system-ui, sans-serif; margin: 24px; background: #111; color: #eee; }
+    video { width: 640px; max-width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; }
+    button, select { font: inherit; margin: 8px 8px 8px 0; }
+  </style>
+</head>
+<body>
+  <h1>GifCam test page</h1>
+  <p>Serve this folder over http (for example <code>npx http-server test</code>) with the extension loaded, then start the camera.</p>
+  <select id="devices"></select>
+  <button id="start">Start camera</button>
+  <button id="stop">Stop</button>
+  <br />
+  <video id="video" autoplay muted playsinline></video>
+  <pre id="log"></pre>
+  <script>
+    const video = document.getElementById("video");
+    const log = (m) => (document.getElementById("log").textContent += m + "\n");
+    let stream;
+    async function listDevices() {
+      const devices = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "videoinput");
+      document.getElementById("devices").replaceChildren(
+        ...devices.map((d) => new Option(d.label || d.deviceId, d.deviceId))
+      );
+    }
+    document.getElementById("start").onclick = async () => {
+      const deviceId = document.getElementById("devices").value;
+      stream = await navigator.mediaDevices.getUserMedia({ video: deviceId ? { deviceId: { exact: deviceId } } : true });
+      video.srcObject = stream;
+      const t = stream.getVideoTracks()[0];
+      log(`track: ${t.label} ${JSON.stringify(t.getSettings())}`);
+      listDevices();
+    };
+    document.getElementById("stop").onclick = () => stream && stream.getTracks().forEach((t) => t.stop());
+    listDevices();
+  </script>
+</body>
+</html>

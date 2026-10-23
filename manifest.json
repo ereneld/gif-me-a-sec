@@ -1,0 +1,75 @@
+{
+  "manifest_version": 3,
+  "name": "GifCam",
+  "version": "0.1.0",
+  "description": "Use a GIF as your camera in Google Meet and other web meetings. Animated for a set time, or a still frame.",
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://api.giphy.com/*",
+    "https://*.giphy.com/*",
+    "https://tenor.googleapis.com/*",
+    "https://*.tenor.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "commands": {
+    "replay-gif": {
+      "suggested_key": {
+        "default": "Alt+Shift+G"
+      },
+      "description": "Replay the GIF on the current tab"
+    },
+    "toggle-gifcam": {
+      "suggested_key": {
+        "default": "Alt+Shift+C"
+      },
+      "description": "Turn GifCam on or off"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/inject.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/bridge.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ]
+}
