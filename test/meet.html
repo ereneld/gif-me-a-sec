@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Weekly sync</title>
+<style>
+body{margin:0;background:#202124;font:14px system-ui,sans-serif;color:#e8eaed;height:100vh;display:flex;flex-direction:column}
+.grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 16px 0}
+.tile{position:relative;background:#3c4043;border-radius:12px;overflow:hidden}
+.tile video{width:100%;height:100%;object-fit:cover;display:block}
+.face{width:100%;height:100%;display:grid;place-items:center;font-size:72px;background:linear-gradient(135deg,#1a73e8,#0b57d0)}
+.name{position:absolute;left:12px;bottom:10px;font-weight:500;text-shadow:0 1px 2px #000}
+.bar{height:80px;display:flex;align-items:center;justify-content:center;gap:12px}
+.bar span{width:44px;height:44px;border-radius:50%;background:#3c4043;display:grid;place-items:center}
+.bar .end{background:#ea4335;width:64px;border-radius:22px}
+.title{position:absolute;left:24px;bottom:28px;font-size:15px}
+</style></head><body>
+<div class="grid"><div class="tile"><video id="v" autoplay muted playsinline></video><div class="name">You</div></div>
+<div class="tile"><div class="face">🧑‍💻</div><div class="name">Alex</div></div></div>
+<div class="bar"><div class="title">Weekly sync</div><span>🎙</span><span>📷</span><span>✋</span><span class="end">📞</span></div>
+<script>navigator.mediaDevices.getUserMedia({video:true}).then(s=>v.srcObject=s)</script>
+</body></html>

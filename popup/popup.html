@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>GifCam</title>
+  <title>Gif Me A Sec</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <header>
-    <div class="brand"><img src="../icons/icon32.png" alt="" /> GifCam</div>
+    <div class="brand"><img src="../icons/icon32.png" alt="" /> Gif Me A Sec</div>
     <div class="header-actions">
       <button type="button" id="openSettings" class="icon-btn" title="Settings" aria-label="Settings">⚙</button>
       <label class="switch" title="Use the GIF as your camera">
@@ -16,6 +16,16 @@
       </label>
     </div>
   </header>
+
+  <main id="welcomeView" class="hidden">
+    <section class="welcome">
+      <h2>Welcome to Gif Me A Sec 👋</h2>
+      <p class="hint">Drop a reaction GIF on your webcam for a few seconds in any web meeting. To search for GIFs, add a free API key from at least one of these services. You can add the others later in Settings.</p>
+      <div id="welcomeKeys" class="key-list"></div>
+      <button type="button" id="welcomeDone" disabled>Start</button>
+      <button type="button" id="welcomeSkip" class="link">Skip, I'll use links and uploads</button>
+    </section>
+  </main>
 
   <main id="mainView">
 
@@ -113,21 +123,13 @@
       </div>
       <h3>API keys</h3>
       <p class="hint">Needed only for searching. Links and uploads work without a key. Keys are saved in this browser only.</p>
-      <div class="keys">
-      <label>GIPHY API key <a href="https://developers.giphy.com/dashboard/" target="_blank" rel="noopener">get one</a>
-        <input type="text" id="giphyKey" autocomplete="off" spellcheck="false" />
-      </label>
-      <label>Tenor (Google Cloud) API key <a href="https://developers.google.com/tenor/guides/quickstart" target="_blank" rel="noopener">get one</a>
-        <input type="text" id="tenorKey" autocomplete="off" spellcheck="false" />
-      </label>
-      <label>Pixabay API key <a href="https://pixabay.com/api/docs/" target="_blank" rel="noopener">get one</a>
-        <input type="text" id="pixabayKey" autocomplete="off" spellcheck="false" />
-      </label>
-      </div>
+      <div id="settingsKeys" class="key-list"></div>
       <h3>In meetings</h3>
-      <label class="check"><input type="checkbox" id="showPanel" /> Show the GIF quick panel while GifCam is your camera</label>
+      <label class="check"><input type="checkbox" id="showPanel" /> Show the GIF quick panel while your camera is on</label>
       <h3>Keyboard shortcuts</h3>
-      <p class="hint">Alt+Shift+Q shows the quick panel, Alt+Shift+G replays the GIF, Alt+Shift+C turns GifCam on or off. <a href="#" id="shortcutsLink">Change shortcuts</a></p>
+      <p class="hint">Alt+Shift+Q shows the quick panel, Alt+Shift+G replays the GIF, Alt+Shift+C turns it on or off. <a href="#" id="shortcutsLink">Change shortcuts</a></p>
+      <h3>Privacy</h3>
+      <p class="hint">No accounts, no tracking, no servers of ours. Your keys, settings and picked GIF stay in this browser. Searches go straight to the GIF service you use.</p>
     </section>
   </main>
 

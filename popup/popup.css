@@ -100,3 +100,18 @@ button:disabled { opacity: .5; cursor: default; }
 .settings .options { display: grid; gap: 8px; margin-top: 4px; }
 .current .icon-btn { font-size: 18px; }
 .picker { border-bottom: 0; }
+
+.key-list { display: grid; gap: 10px; margin: 6px 0; }
+.key-card { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+.key-card .key-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-weight: 600; }
+.key-card .key-head .ok { color: #16a34a; font-weight: 500; font-size: 12px; }
+.key-card p { margin: 0; color: var(--muted); font-size: 12px; }
+.key-card a { color: var(--accent); font-size: 12px; font-weight: 500; }
+.key-card .key-row { display: flex; gap: 6px; }
+.key-card input { flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+.notice .key-card { background: var(--bg); margin-top: 0; }
+.welcome { display: grid; gap: 8px; border-bottom: 0; }
+.welcome h2 { font-size: 17px; margin: 4px 0 0; }
+.welcome #welcomeDone { padding: 9px; }
+button.link { background: none; color: var(--muted); font-weight: 500; text-decoration: underline; padding: 2px; }
+html.in-tab body { margin: 40px auto; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }

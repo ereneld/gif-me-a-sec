@@ -1,4 +1,4 @@
-// Isolated-world content script: relays GifCam settings and the selected GIF
+// Isolated-world content script: relays Gif Me A Sec settings and the selected GIF
 // from extension storage to the page-world camera override (inject.js).
 (() => {
   const TAG = "__gifcam__";
@@ -62,7 +62,7 @@
     if (want && !panel) {
       panel = document.createElement("iframe");
       panel.src = chrome.runtime.getURL("panel/panel.html");
-      panel.title = "GifCam reactions";
+      panel.title = "Gif Me A Sec reactions";
       panel.allow = "";
       panel.setAttribute("allowtransparency", "true");
       Object.assign(panel.style, {

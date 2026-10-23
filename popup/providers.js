@@ -5,6 +5,8 @@ export const PROVIDERS = {
   giphy: {
     name: "GIPHY",
     keyName: "giphyKey",
+    keyUrl: "https://developers.giphy.com/dashboard/",
+    keyHelp: "Create a free app in the GIPHY developer dashboard and copy its API key.",
     attribution: "Powered by GIPHY",
     async search(query, key) {
       const endpoint = query ? "search" : "trending";
@@ -24,6 +26,8 @@ export const PROVIDERS = {
   tenor: {
     name: "Tenor",
     keyName: "tenorKey",
+    keyUrl: "https://developers.google.com/tenor/guides/quickstart",
+    keyHelp: "Enable the Tenor API in a Google Cloud project and create an API key.",
     attribution: "Powered by Tenor",
     async search(query, key) {
       const endpoint = query ? "search" : "featured";
@@ -71,6 +75,8 @@ async function cachedJson(url) {
 PROVIDERS.pixabay = {
   name: "Pixabay",
   keyName: "pixabayKey",
+  keyUrl: "https://pixabay.com/api/docs/",
+  keyHelp: "Sign up for free, then copy the key shown in the API docs.",
   attribution: "Images and videos from Pixabay",
   // options.type is "video" or "image".
   async search(query, key, options = {}) {

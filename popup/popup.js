@@ -16,6 +16,7 @@ const DEFAULTS = {
   pixabayType: "video",
   showPanel: true,
   tab: "giphy",
+  welcomeDone: false,
 };
 
 let state = { ...DEFAULTS };
@@ -41,9 +42,6 @@ function renderSettings() {
   $("after").value = state.after;
   $("fit").value = state.fit;
   $("background").value = state.background;
-  $("giphyKey").value = state.giphyKey || "";
-  $("tenorKey").value = state.tenorKey || "";
-  $("pixabayKey").value = state.pixabayKey || "";
   $("pixabayType").value = state.pixabayType;
   $("showPanel").checked = state.showPanel !== false;
   document.querySelectorAll(".animated-only").forEach((el) => el.classList.toggle("hidden", state.mode !== "animated"));
@@ -103,10 +101,81 @@ async function queryTabStatus() {
   }
 }
 
+function showView(name) {
+  for (const view of ["welcome", "main", "settings"]) $(`${view}View`).classList.toggle("hidden", view !== name);
+  if (name === "settings") renderSettingsKeys();
+  if (name === "welcome") renderWelcome();
+  if (name === "main") runSearch();
+}
+
 function showSettings(open) {
-  $("mainView").classList.toggle("hidden", open);
-  $("settingsView").classList.toggle("hidden", !open);
-  if (!open) runSearch();
+  showView(open ? "settings" : "main");
+}
+
+// ------------------------------------------------------------------ API keys
+
+const hasAnyKey = () => Object.values(PROVIDERS).some((p) => state[p.keyName]);
+
+// A card with a provider's key input and a link to get a key.
+function keyCard(id, onSaved) {
+  const provider = PROVIDERS[id];
+  const card = document.createElement("form");
+  card.className = "key-card";
+  const head = document.createElement("div");
+  head.className = "key-head";
+  const name = document.createElement("span");
+  name.textContent = provider.name;
+  const ok = document.createElement("span");
+  ok.className = "ok";
+  ok.textContent = state[provider.keyName] ? "✓ Added" : "";
+  head.append(name, ok);
+  const help = document.createElement("p");
+  help.textContent = `${provider.keyHelp} `;
+  const link = document.createElement("a");
+  link.href = provider.keyUrl;
+  link.target = "_blank";
+  link.rel = "noopener";
+  link.textContent = "Get a free key ↗";
+  help.append(link);
+  const row = document.createElement("div");
+  row.className = "key-row";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = `${provider.name} API key`;
+  input.autocomplete = "off";
+  input.spellcheck = false;
+  input.value = state[provider.keyName] || "";
+  const button = document.createElement("button");
+  button.type = "submit";
+  button.textContent = "Save";
+  row.append(input, button);
+  card.append(head, help, row);
+  card.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const value = input.value.trim();
+    await save({ [provider.keyName]: value });
+    ok.textContent = value ? "✓ Added" : "";
+    toast(value ? `${provider.name} key saved` : `${provider.name} key removed`);
+    if (onSaved) onSaved(value);
+  });
+  return card;
+}
+
+function renderSettingsKeys() {
+  $("settingsKeys").replaceChildren(...Object.keys(PROVIDERS).map((id) => keyCard(id)));
+}
+
+function renderWelcome() {
+  const update = () => ($("welcomeDone").disabled = !hasAnyKey());
+  $("welcomeKeys").replaceChildren(...Object.keys(PROVIDERS).map((id) => keyCard(id, update)));
+  update();
+}
+
+async function finishWelcome() {
+  await save({ welcomeDone: true });
+  const firstWithKey = Object.keys(PROVIDERS).find((id) => state[PROVIDERS[id].keyName]);
+  if (firstWithKey) showTab(firstWithKey);
+  showView("main");
 }
 
 function bindSettings() {
@@ -129,9 +198,6 @@ function bindSettings() {
   }
   $("showPanel").addEventListener("change", (e) => save({ showPanel: e.target.checked }));
   $("pixabayType").addEventListener("change", (e) => save({ pixabayType: e.target.value }).then(() => runSearch()));
-  for (const id of ["giphyKey", "tenorKey", "pixabayKey"]) {
-    $(id).addEventListener("change", (e) => save({ [id]: e.target.value.trim() }).then(() => toast("Key saved")));
-  }
   $("replay").addEventListener("click", async () => {
     const tab = await activeTab();
     if (!tab) return;
@@ -146,7 +212,7 @@ async function afterPick(gif, noun) {
   state.gif = gif;
   await renderPreview();
   renderSettings();
-  toast(state.enabled ? `${noun} selected, playing on your camera` : `${noun} selected. Turn GifCam on to use it.`);
+  toast(state.enabled ? `${noun} selected, playing on your camera` : `${noun} selected. Turn it on to use it.`);
 }
 
 async function useGif(buffer, meta) {
@@ -202,16 +268,11 @@ async function runSearch() {
   $("attribution").textContent = provider.attribution;
   $("pixabayType").classList.toggle("hidden", state.tab !== "pixabay");
 
+  $("searchForm").classList.toggle("hidden", !key);
   if (!key) {
+    // No key for this tab yet: ask for it right here.
     results.replaceChildren();
-    const open = document.createElement("button");
-    open.type = "button";
-    open.textContent = "Open settings";
-    open.addEventListener("click", () => showSettings(true));
-    notice.replaceChildren(
-      `Add a ${provider.name} API key in Settings to search ${provider.name}. The URL and Upload tabs work without one.`,
-      open
-    );
+    notice.replaceChildren(keyCard(state.tab, (value) => value && runSearch()));
     notice.classList.remove("hidden");
     return;
   }
@@ -276,7 +337,7 @@ function bindPicker() {
       .request({ origins: [`${new URL(url).origin}/*`] })
       .then((granted) => {
         if (granted) useRemoteGif(url, { title, source: "url" });
-        else toast("GifCam needs access to that site to download the GIF.");
+        else toast("Gif Me A Sec needs access to that site to download the GIF.");
       })
       .catch(() => useRemoteGif(url, { title, source: "url" }));
   });
@@ -292,11 +353,16 @@ function bindPicker() {
 
 (async () => {
   state = { ...DEFAULTS, ...(await chrome.storage.local.get(Object.keys(DEFAULTS))) };
+  // Opened as a full tab (welcome page after install, or options page).
+  if (location.hash || window.innerWidth > 500) document.documentElement.classList.add("in-tab");
   bindSettings();
   bindPicker();
+  $("welcomeDone").addEventListener("click", finishWelcome);
+  $("welcomeSkip").addEventListener("click", finishWelcome);
   renderSettings();
   renderPreview();
   showTab(state.tab);
-  if (location.hash === "#settings") showSettings(true);
+  if (location.hash === "#settings") showView("settings");
+  else if (location.hash === "#welcome" || (!state.welcomeDone && !hasAnyKey())) showView("welcome");
   queryTabStatus();
 })();

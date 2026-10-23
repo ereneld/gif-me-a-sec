@@ -15,3 +15,8 @@ chrome.commands.onCommand.addListener(async (command) => {
     if (tab) chrome.tabs.sendMessage(tab.id, { type: "gifcam:replay" }).catch(() => {});
   }
 });
+
+// First install: open the welcome page where people add their API keys.
+chrome.runtime.onInstalled.addListener(({ reason }) => {
+  if (reason === "install") chrome.tabs.create({ url: chrome.runtime.getURL("popup/popup.html#welcome") });
+});

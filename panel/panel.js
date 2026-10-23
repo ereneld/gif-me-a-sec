@@ -88,9 +88,9 @@ async function search(term) {
   const providerId = state.panelProvider;
   if (!providerId) {
     grid.replaceChildren(
-      emptyCell("Add a GIPHY, Tenor or Pixabay key to search.", {
-        label: "Open settings",
-        run: () => chrome.tabs.create({ url: chrome.runtime.getURL("popup/popup.html#settings") }),
+      emptyCell("Add a free GIPHY, Tenor or Pixabay API key to search.", {
+        label: "Add a key",
+        run: () => chrome.tabs.create({ url: chrome.runtime.getURL("popup/popup.html#welcome") }),
       })
     );
     return;
@@ -149,7 +149,7 @@ async function pick(item, button) {
     await chrome.storage.local.set({ enabled: true });
     state.enabled = true;
     if (!streams) {
-      status("It will play when your camera is on. (Reload this tab if GifCam was just installed.)");
+      status("It will play when your camera is on. (Reload this tab if Gif Me A Sec was just installed.)");
     } else if (state.mode === "still") {
       status("Showing a still frame.");
     } else {
