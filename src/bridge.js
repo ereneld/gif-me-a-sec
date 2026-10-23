@@ -16,12 +16,18 @@
   }
 
   async function sendSettings(includeGif) {
-    const data = await chrome.storage.local.get([...SETTINGS_KEYS, "gifData"]);
+    const data = await chrome.storage.local.get([...SETTINGS_KEYS, "gifData", "gifFrames"]);
     const settings = {};
     for (const k of SETTINGS_KEYS) settings[k] = data[k];
     let gifBuffer = null;
+    let frameSet = null;
     if (includeGif && data.gifData) gifBuffer = base64ToBuffer(data.gifData);
-    post({ type: "settings", settings, gifBuffer }, gifBuffer ? [gifBuffer] : []);
+    // Videos (e.g. from Pixabay) are stored as pre-captured JPEG frames.
+    if (includeGif && data.gifFrames) {
+      frameSet = { frameMs: data.gifFrames.frameMs, buffers: data.gifFrames.frames.map(base64ToBuffer) };
+    }
+    const transfer = [gifBuffer, ...(frameSet ? frameSet.buffers : [])].filter(Boolean);
+    post({ type: "settings", settings, gifBuffer, frameSet }, transfer);
   }
 
   // The page script asks for settings when it loads (it may load after us).
@@ -33,8 +39,9 @@
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     const keys = Object.keys(changes);
-    if (!keys.some((k) => k === "gifData" || SETTINGS_KEYS.includes(k))) return;
-    sendSettings(keys.includes("gifData"));
+    const gifChanged = keys.includes("gifData") || keys.includes("gifFrames");
+    if (!gifChanged && !keys.some((k) => SETTINGS_KEYS.includes(k))) return;
+    sendSettings(gifChanged);
   });
 
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {

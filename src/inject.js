@@ -43,7 +43,7 @@
     if (event.source !== window || !event.data || !event.data[TAG]) return;
     const msg = event.data;
     if (msg.from !== "bridge") return;
-    if (msg.type === "settings") applySettings(msg.settings, msg.gifBuffer);
+    if (msg.type === "settings") applySettings(msg.settings, msg.gifBuffer, msg.frameSet);
     else if (msg.type === "replay") sources.forEach((s) => s.restart());
     else if (msg.type === "status") {
       post({
@@ -58,14 +58,15 @@
     }
   });
 
-  async function applySettings(next, gifBuffer) {
+  async function applySettings(next, gifBuffer, frameSet) {
     const cleaned = {};
     for (const key of Object.keys(DEFAULTS)) {
       cleaned[key] = next && next[key] !== undefined ? next[key] : DEFAULTS[key];
     }
     cleaned.duration = Math.max(0.5, Number(cleaned.duration) || DEFAULTS.duration);
     settings = cleaned;
-    if (gifBuffer) await loadGif(gifBuffer, (settings.gif && settings.gif.mime) || "image/gif");
+    if (frameSet) await loadFrameSet(frameSet);
+    else if (gifBuffer) await loadGif(gifBuffer, (settings.gif && settings.gif.mime) || "image/gif");
     else if (!settings.gif) setFrames([]);
     resolveFirstSettings();
     sources.forEach((s) => s.restart());
@@ -91,6 +92,21 @@
       const bitmap = await createImageBitmap(new Blob([buffer], { type: mime }));
       decoded = [{ bitmap, duration: 1000 }];
     }
+    if (token !== decodeToken) {
+      decoded.forEach((f) => f.bitmap.close());
+      return;
+    }
+    setFrames(decoded);
+  }
+
+  async function loadFrameSet({ frameMs, buffers }) {
+    const token = ++decodeToken;
+    const decoded = await Promise.all(
+      buffers.map(async (buf) => ({
+        bitmap: await createImageBitmap(new Blob([buf], { type: "image/jpeg" })),
+        duration: frameMs || 100,
+      }))
+    );
     if (token !== decodeToken) {
       decoded.forEach((f) => f.bitmap.close());
       return;
@@ -294,13 +310,25 @@
         drawScaled(cover);
         return;
       }
-      if (settings.background === "blur") {
-        ctx.save();
-        ctx.filter = "blur(24px) brightness(0.7)";
-        drawScaled(cover * 1.1);
-        ctx.restore();
-      }
+      if (settings.background === "blur") ctx.drawImage(this.blurredBackdrop(source, sw, sh), 0, 0, W, H);
       drawScaled(contain);
+    }
+
+    // Blurring a full-size canvas every frame is too slow without a GPU, so blur
+    // a small copy once per GIF frame and scale it up.
+    blurredBackdrop(source, sw, sh) {
+      if (this.backdrop && this.backdrop.source === source) return this.backdrop.canvas;
+      const w = Math.max(16, Math.round(this.width / 8));
+      const h = Math.max(9, Math.round(this.height / 8));
+      const canvas = (this.backdrop && this.backdrop.canvas) || document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const c = canvas.getContext("2d");
+      const scale = Math.max(w / sw, h / sh) * 1.1;
+      c.filter = "blur(3px) brightness(0.7)";
+      c.drawImage(source, (w - sw * scale) / 2, (h - sh * scale) / 2, sw * scale, sh * scale);
+      this.backdrop = { source, canvas };
+      return canvas;
     }
 
     paintPlaceholder() {

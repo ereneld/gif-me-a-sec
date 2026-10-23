@@ -84,3 +84,8 @@ button:disabled { opacity: .5; cursor: default; }
 
 .toast { position: fixed; left: 14px; right: 14px; bottom: 10px; background: var(--fg); color: var(--bg); padding: 8px 10px; border-radius: 6px; }
 .hidden { display: none !important; }
+.search select { flex: none; }
+.grid .badge { position: absolute; left: 4px; bottom: 4px; background: rgba(0,0,0,.65); color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 4px; }
+.grid button { position: relative; }
+.progress { height: 4px; background: var(--card); border-radius: 4px; margin-top: 8px; overflow: hidden; }
+.progress div { height: 100%; width: 0; background: var(--accent); transition: width .1s; }

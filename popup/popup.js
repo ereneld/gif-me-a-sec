@@ -12,6 +12,8 @@ const DEFAULTS = {
   gif: null,
   giphyKey: "",
   tenorKey: "",
+  pixabayKey: "",
+  pixabayType: "video",
   tab: "giphy",
 };
 
@@ -40,6 +42,8 @@ function renderSettings() {
   $("background").value = state.background;
   $("giphyKey").value = state.giphyKey || "";
   $("tenorKey").value = state.tenorKey || "";
+  $("pixabayKey").value = state.pixabayKey || "";
+  $("pixabayType").value = state.pixabayType;
   document.querySelectorAll(".animated-only").forEach((el) => el.classList.toggle("hidden", state.mode !== "animated"));
   document.querySelectorAll(".contain-only").forEach((el) => el.classList.toggle("hidden", state.fit !== "contain"));
   renderStatus();
@@ -55,13 +59,22 @@ function renderStatus(status) {
 }
 
 async function renderPreview() {
-  const { gifData, gif } = await chrome.storage.local.get(["gifData", "gif"]);
+  const { gifData, gifFrames, gif } = await chrome.storage.local.get(["gifData", "gifFrames", "gif"]);
   const preview = $("preview");
   preview.replaceChildren();
-  if (gifData && gif) {
+  clearInterval(renderPreview.timer);
+  if ((gifData || gifFrames) && gif) {
     const img = document.createElement("img");
-    img.src = `data:${gif.mime || "image/gif"};base64,${gifData}`;
     img.alt = gif.title || "";
+    if (gifFrames) {
+      // Play captured video frames like a GIF.
+      let i = 0;
+      const show = () => (img.src = `data:image/jpeg;base64,${gifFrames.frames[i++ % gifFrames.frames.length]}`);
+      show();
+      renderPreview.timer = setInterval(show, gifFrames.frameMs);
+    } else {
+      img.src = `data:${gif.mime || "image/gif"};base64,${gifData}`;
+    }
     preview.append(img);
     $("gifTitle").textContent = gif.title || "Selected GIF";
   } else {
@@ -100,7 +113,8 @@ function bindSettings() {
   for (const id of ["after", "fit", "background"]) {
     $(id).addEventListener("change", (e) => save({ [id]: e.target.value }).then(renderSettings));
   }
-  for (const id of ["giphyKey", "tenorKey"]) {
+  $("pixabayType").addEventListener("change", (e) => save({ pixabayType: e.target.value }).then(() => runSearch()));
+  for (const id of ["giphyKey", "tenorKey", "pixabayKey"]) {
     $(id).addEventListener("change", (e) => save({ [id]: e.target.value.trim() }).then(() => runSearch()));
   }
   $("replay").addEventListener("click", async () => {
@@ -144,6 +158,7 @@ async function useGif(buffer, meta) {
   }
   const gif = { title: meta.title, source: meta.source, url: meta.url || null, mime };
   await chrome.storage.local.set({ gif, gifData: bufferToBase64(buffer) });
+  await chrome.storage.local.remove("gifFrames");
   state.gif = gif;
   await renderPreview();
   renderSettings();
@@ -158,6 +173,68 @@ async function useRemoteGif(url, meta) {
     await useGif(await res.arrayBuffer(), { ...meta, url, mime: res.headers.get("content-type") });
   } catch (err) {
     toast(`Couldn't download that GIF (${err.message}).`);
+  }
+}
+
+// Video can't be decoded inside meeting pages reliably (CSP, codecs), so we
+// capture it here as JPEG frames that the camera plays like a GIF.
+const VIDEO_FPS = 10;
+const VIDEO_MAX_SECONDS = 10;
+
+async function captureVideoFrames(blob, onProgress) {
+  const url = URL.createObjectURL(blob);
+  const video = document.createElement("video");
+  video.muted = true;
+  video.preload = "auto";
+  video.src = url;
+  try {
+    await new Promise((resolve, reject) => {
+      video.onloadeddata = resolve;
+      video.onerror = () => reject(new Error("this browser can't play that video"));
+    });
+    const seconds = Math.min(video.duration || VIDEO_MAX_SECONDS, VIDEO_MAX_SECONDS);
+    const scale = Math.min(1, 640 / Math.max(video.videoWidth, video.videoHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+    const ctx = canvas.getContext("2d");
+    const count = Math.max(1, Math.floor(seconds * VIDEO_FPS));
+    const frames = [];
+    for (let i = 0; i < count; i++) {
+      video.currentTime = i / VIDEO_FPS;
+      await new Promise((resolve) => (video.onseeked = resolve));
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const jpeg = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.8));
+      frames.push(bufferToBase64(await jpeg.arrayBuffer()));
+      onProgress((i + 1) / count);
+    }
+    return { frameMs: 1000 / VIDEO_FPS, frames };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function useRemoteVideo(url, meta) {
+  const bar = $("progress");
+  const fill = bar.firstElementChild;
+  toast("Converting video… keep this popup open.", 60000);
+  bar.classList.remove("hidden");
+  fill.style.width = "0";
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const gifFrames = await captureVideoFrames(await res.blob(), (p) => (fill.style.width = `${Math.round(p * 100)}%`));
+    const gif = { title: meta.title, source: meta.source, url, mime: "image/jpeg", kind: "video" };
+    await chrome.storage.local.set({ gif, gifFrames });
+    await chrome.storage.local.remove("gifData");
+    state.gif = gif;
+    await renderPreview();
+    renderSettings();
+    toast(state.enabled ? "Video selected" : "Video selected. Turn GifCam on to use it.");
+  } catch (err) {
+    toast(`Couldn't use that video (${err.message}).`);
+  } finally {
+    bar.classList.add("hidden");
   }
 }
 
@@ -179,6 +256,7 @@ async function runSearch() {
   const notice = $("keyNotice");
   const key = state[provider.keyName];
   $("attribution").textContent = provider.attribution;
+  $("pixabayType").classList.toggle("hidden", state.tab !== "pixabay");
 
   if (!key) {
     results.replaceChildren();
@@ -191,7 +269,7 @@ async function runSearch() {
   results.replaceChildren(emptyCell("Loading…"));
 
   try {
-    const items = await provider.search($("query").value.trim(), key);
+    const items = await provider.search($("query").value.trim(), key, { type: state.pixabayType });
     if (token !== searchToken) return;
     if (!items.length) {
       results.replaceChildren(emptyCell("No GIFs found."));
@@ -207,7 +285,16 @@ async function runSearch() {
         img.alt = item.title;
         img.loading = "lazy";
         btn.append(img);
-        btn.addEventListener("click", () => useRemoteGif(item.url, { title: item.title, source: state.tab }));
+        if (item.kind === "video") {
+          const badge = document.createElement("span");
+          badge.className = "badge";
+          badge.textContent = item.seconds ? `▶ ${item.seconds}s` : "▶";
+          btn.append(badge);
+        }
+        const meta = { title: item.title, source: state.tab };
+        btn.addEventListener("click", () =>
+          item.kind === "video" ? useRemoteVideo(item.url, meta) : useRemoteGif(item.url, meta)
+        );
         return btn;
       })
     );

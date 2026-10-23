@@ -63,6 +63,7 @@
     <nav class="tabs">
       <button type="button" data-tab="giphy" class="active">GIPHY</button>
       <button type="button" data-tab="tenor">Tenor</button>
+      <button type="button" data-tab="pixabay">Pixabay</button>
       <button type="button" data-tab="url">URL</button>
       <button type="button" data-tab="upload">Upload</button>
     </nav>
@@ -70,11 +71,16 @@
     <div class="tab-panel" data-panel="search">
       <form id="searchForm" class="search">
         <input type="search" id="query" placeholder="Search GIFs (empty = trending)" />
+        <select id="pixabayType" class="hidden" title="Pixabay media type">
+          <option value="video">Videos</option>
+          <option value="image">Images</option>
+        </select>
         <button type="submit">Search</button>
       </form>
       <div id="keyNotice" class="notice hidden"></div>
       <div id="results" class="grid"></div>
       <div id="attribution" class="attribution"></div>
+      <div id="progress" class="progress hidden"><div></div></div>
     </div>
 
     <div class="tab-panel hidden" data-panel="url">
@@ -100,6 +106,9 @@
     </label>
     <label>Tenor (Google Cloud) API key <a href="https://developers.google.com/tenor/guides/quickstart" target="_blank" rel="noopener">get one</a>
       <input type="text" id="tenorKey" autocomplete="off" spellcheck="false" />
+    </label>
+    <label>Pixabay API key <a href="https://pixabay.com/api/docs/" target="_blank" rel="noopener">get one</a>
+      <input type="text" id="pixabayKey" autocomplete="off" spellcheck="false" />
     </label>
   </details>
 

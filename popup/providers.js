@@ -50,3 +50,42 @@ export const PROVIDERS = {
     },
   },
 };
+
+// Pixabay asks API users to cache responses for 24 hours.
+const PIXABAY_CACHE_MS = 24 * 60 * 60 * 1000;
+
+async function cachedJson(url) {
+  const { pixabayCache = {} } = await chrome.storage.local.get("pixabayCache");
+  const now = Date.now();
+  for (const k of Object.keys(pixabayCache)) if (now - pixabayCache[k].t > PIXABAY_CACHE_MS) delete pixabayCache[k];
+  const cacheKey = url.replace(/key=[^&]*&?/, "");
+  if (pixabayCache[cacheKey]) return pixabayCache[cacheKey].body;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Pixabay returned ${res.status}`);
+  const body = await res.json();
+  pixabayCache[cacheKey] = { t: now, body };
+  await chrome.storage.local.set({ pixabayCache });
+  return body;
+}
+
+PROVIDERS.pixabay = {
+  name: "Pixabay",
+  keyName: "pixabayKey",
+  attribution: "Images and videos from Pixabay",
+  // options.type is "video" or "image".
+  async search(query, key, options = {}) {
+    const isVideo = options.type !== "image";
+    const params = new URLSearchParams({ key, per_page: "24", safesearch: "true" });
+    if (query) params.set("q", query.slice(0, 100));
+    const base = isVideo ? "https://pixabay.com/api/videos/" : "https://pixabay.com/api/";
+    const body = await cachedJson(`${base}?${params}`);
+    return (body.hits || []).map((h) => {
+      const title = h.tags || "Pixabay";
+      if (isVideo) {
+        const v = h.videos.tiny && h.videos.tiny.url ? h.videos.tiny : h.videos.small;
+        return { id: h.id, title, thumb: v.thumbnail, url: v.url, kind: "video", seconds: h.duration };
+      }
+      return { id: h.id, title, thumb: h.previewURL, url: h.webformatURL, kind: "image" };
+    });
+  },
+};
