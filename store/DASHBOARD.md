@@ -54,9 +54,9 @@ Not affiliated with GIPHY, Tenor or Pixabay.
 
 **Official URL:** None (only for a site you've verified in Google Search Console)
 
-**Homepage URL:** https://github.com/ereneld/gifcam
+**Homepage URL:** https://github.com/ereneld/gif-me-a-sec
 
-**Support URL:** https://github.com/ereneld/gifcam/issues
+**Support URL:** https://github.com/ereneld/gif-me-a-sec/issues
 
 **Mature content:** No (leave it unchecked). GIF search uses each service's safe filter: GIPHY rating pg-13, Tenor contentfilter medium, Pixabay safesearch on.
 
@@ -64,6 +64,6 @@ Not affiliated with GIPHY, Tenor or Pixabay.
 
 ## Next tabs (same item)
 
-**Privacy practices:** answers are in `store/LISTING.md` under "Privacy practices tab". Privacy policy URL: https://github.com/ereneld/gifcam/blob/main/PRIVACY.md (the repo must be public for this link to work).
+**Privacy practices:** answers are in `store/LISTING.md` under "Privacy practices tab". Privacy policy URL: https://github.com/ereneld/gif-me-a-sec/blob/main/PRIVACY.md (the repo must be public for this link to work).
 
 **Distribution:** Free, Public, all regions.

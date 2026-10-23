@@ -35,4 +35,4 @@ When you search, your search words and your own API key for that service are sen
 
 ## Contact
 
-Questions: open an issue at https://github.com/ereneld/gifcam/issues
+Questions: open an issue at https://github.com/ereneld/gif-me-a-sec/issues

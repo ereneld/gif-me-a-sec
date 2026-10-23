@@ -4,7 +4,7 @@
   "short_name": "GifMeASec",
   "version": "1.0.0",
   "description": "Drop a reaction GIF on your webcam for a few seconds in Google Meet and other web meetings. Wow, lol, bye, brb.",
-  "homepage_url": "https://github.com/ereneld/gifcam",
+  "homepage_url": "https://github.com/ereneld/gif-me-a-sec",
   "permissions": [
     "storage",
     "unlimitedStorage"

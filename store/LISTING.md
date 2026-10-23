@@ -60,4 +60,4 @@ Show a short reaction GIF in place of the user's webcam video during web meeting
 
 **Data usage:** tick nothing. The extension does not collect or transmit user data. Certify the three disclosures (not sold, not used for unrelated purposes, not used for creditworthiness).
 
-**Privacy policy URL:** https://github.com/ereneld/gifcam/blob/main/PRIVACY.md
+**Privacy policy URL:** https://github.com/ereneld/gif-me-a-sec/blob/main/PRIVACY.md
