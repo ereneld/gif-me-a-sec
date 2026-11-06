@@ -113,6 +113,8 @@ button:disabled { opacity: .5; cursor: default; }
 .welcome { display: grid; gap: 8px; border-bottom: 0; }
 .welcome h2 { font-size: 17px; margin: 4px 0 0; }
 .welcome #welcomeDone { padding: 9px; }
+.privacy-note { display: grid; gap: 4px; padding: 10px; border-radius: 8px; border: 1px solid color-mix(in srgb, #16a34a 35%, transparent); background: color-mix(in srgb, #16a34a 8%, var(--bg)); }
+.privacy-note p { margin: 0; color: var(--muted); font-size: 12px; }
 button.link { background: none; color: var(--muted); font-weight: 500; text-decoration: underline; padding: 2px; }
 html.in-tab body { margin: 40px auto; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 .grid .sentinel { grid-column: 1 / -1; min-height: 1px; text-align: center; color: var(--muted); font-size: 12px; }
