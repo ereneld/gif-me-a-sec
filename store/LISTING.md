@@ -22,7 +22,7 @@ Gif Me A Sec plays a reaction GIF on your webcam for a few seconds during any we
 ★ Quick reactions in the meeting
 A small GIF button sits in the corner of your meeting. Tap it for one-click reactions (wow, lol, applause, thumbs up, bye, brb, mind blown…) or search for anything. Pick one and everyone sees it for 5 seconds.
 
-★ Search GIPHY, Tenor and Pixabay
+★ Search GIPHY and Pixabay
 Add a free API key for any of them (it takes a minute; links are in the extension). You can also paste a GIF link or upload your own GIF or image.
 
 ★ Works where you meet
@@ -36,7 +36,7 @@ No accounts, no tracking, no servers. Your keys, settings and GIFs stay in your 
 
 Keyboard shortcuts: Alt+Shift+Q opens the quick panel, Alt+Shift+G replays the GIF, Alt+Shift+C turns it on or off.
 
-Not affiliated with GIPHY, Tenor or Pixabay.
+Not affiliated with GIPHY or Pixabay.
 
 ## Graphics (in this folder)
 
@@ -54,7 +54,7 @@ Show a short reaction GIF in place of the user's webcam video during web meeting
 
 - *storage / unlimitedStorage*: Saves the user's settings, their own API keys and the picked GIF (or a short clip converted from a video, which can be a few MB) locally so they are ready in the next meeting.
 - *Host permission: all sites (content scripts on `<all_urls>`)*: The extension must run inside whichever meeting site the user uses (Meet, Zoom web, Teams web, Whereby, Discord, others) to filter that page's camera track and show the in-meeting GIF panel. It does nothing on pages that don't use the camera.
-- *Host permissions for api.giphy.com, *.giphy.com, tenor.googleapis.com, *.tenor.com, pixabay.com, cdn.pixabay.com*: To search those services with the user's own API key and download the GIF the user picks.
+- *Host permissions for api.giphy.com, *.giphy.com, pixabay.com, cdn.pixabay.com*: To search those services with the user's own API key and download the GIF the user picks.
 - *Optional host permissions (any site)*: Requested only when the user pastes a GIF link from another site, so the GIF can be downloaded.
 - *Remote code*: No. All code is in the package.
 

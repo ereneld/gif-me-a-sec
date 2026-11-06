@@ -93,7 +93,7 @@ function search(term) {
   if (!providerId) {
     if (feed) feed.stop();
     grid.replaceChildren(
-      emptyCell("Add a free GIPHY, Tenor or Pixabay API key to search.", {
+      emptyCell("Add a free GIPHY or Pixabay API key to search.", {
         label: "Add a key",
         run: () => chrome.tabs.create({ url: chrome.runtime.getURL("popup/popup.html#welcome") }),
       })
@@ -181,7 +181,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 (async () => {
   state = await chrome.storage.local.get([
-    "giphyKey", "tenorKey", "pixabayKey", "pixabayType", "panelProvider",
+    "giphyKey", "pixabayKey", "pixabayType", "panelProvider",
     "enabled", "mode", "duration", "after",
   ]);
   renderProviders();

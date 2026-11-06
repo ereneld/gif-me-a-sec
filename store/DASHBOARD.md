@@ -18,7 +18,7 @@ Gif Me A Sec plays a reaction GIF on your webcam for a few seconds during any we
 ★ Quick reactions in the meeting
 A small GIF button sits in the corner of your meeting. Tap it for one-click reactions (wow, lol, applause, thumbs up, bye, brb, mind blown…) or search for anything. Pick one and everyone sees it for 5 seconds.
 
-★ Search GIPHY, Tenor and Pixabay
+★ Search GIPHY and Pixabay
 Add a free API key for any of them (it takes a minute; links are in the extension). You can also paste a GIF link or upload your own GIF or image.
 
 ★ Works where you meet
@@ -32,7 +32,7 @@ No accounts, no tracking, no servers. Your keys, settings and GIFs stay in your 
 
 Keyboard shortcuts: Alt+Shift+Q opens the quick panel, Alt+Shift+G replays the GIF, Alt+Shift+C turns it on or off.
 
-Not affiliated with GIPHY, Tenor or Pixabay.
+Not affiliated with GIPHY or Pixabay.
 ---
 
 **Category:** Communication (if it isn't listed, use "Fun")
@@ -58,7 +58,7 @@ Not affiliated with GIPHY, Tenor or Pixabay.
 
 **Support URL:** https://github.com/ereneld/gif-me-a-sec/issues
 
-**Mature content:** No (leave it unchecked). GIF search uses each service's safe filter: GIPHY rating pg-13, Tenor contentfilter medium, Pixabay safesearch on.
+**Mature content:** No (leave it unchecked). GIF search uses each service's safe filter: GIPHY rating pg-13, Pixabay safesearch on.
 
 **Item support:** turn it on, so users can report problems from the store page.
 

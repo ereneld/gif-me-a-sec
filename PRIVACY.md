@@ -12,7 +12,7 @@ Nothing. The extension has no accounts, no analytics, no tracking and no servers
 
 The following is saved only in your browser's local extension storage (`chrome.storage.local`) and never leaves your device:
 
-- the API keys you add for GIPHY, Tenor or Pixabay
+- the API keys you add for GIPHY or Pixabay
 - your settings (play time, what happens afterwards, fit and so on)
 - the GIF you last picked, so it is ready for your next meeting
 - recent Pixabay search results, kept for up to 24 hours as Pixabay's API terms require
@@ -25,13 +25,13 @@ Camera video is processed entirely inside the meeting tab on your device. When a
 
 ## Third-party services
 
-When you search, your search words and your own API key for that service are sent directly from your browser to it: [GIPHY](https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy), [Tenor](https://policies.google.com/privacy) or [Pixabay](https://pixabay.com/service/privacy/). Thumbnails and GIFs are downloaded from their servers. Those services handle that data under their own privacy policies. If you paste a link, the GIF is downloaded from that site.
+When you search, your search words and your own API key for that service are sent directly from your browser to it: [GIPHY](https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy) or [Pixabay](https://pixabay.com/service/privacy/). Thumbnails and GIFs are downloaded from their servers. Those services handle that data under their own privacy policies. If you paste a link, the GIF is downloaded from that site.
 
 ## Permissions
 
 - **Access to all sites**: needed so the extension can work on any meeting site (Google Meet, Zoom, Teams, Whereby and others) by filtering the camera inside that page.
 - **Storage / unlimited storage**: to keep your API keys, settings and the picked GIF (or converted video clip) on your device.
-- **GIPHY, Tenor and Pixabay hosts**: to search and download GIFs.
+- **GIPHY and Pixabay hosts**: to search and download GIFs.
 
 ## Contact
 

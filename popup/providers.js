@@ -32,38 +32,6 @@ export const PROVIDERS = {
       };
     },
   },
-  tenor: {
-    name: "Tenor",
-    keyName: "tenorKey",
-    keyUrl: "https://developers.google.com/tenor/guides/quickstart",
-    keyHelp: "Enable the Tenor API in a Google Cloud project and create an API key.",
-    attribution: "Powered by Tenor",
-    async search(query, key, { cursor } = {}) {
-      const endpoint = query ? "search" : "featured";
-      const params = new URLSearchParams({
-        key,
-        client_key: "gifcam",
-        limit: PAGE_SIZE,
-        contentfilter: "medium",
-        media_filter: "gif,mediumgif,tinygif",
-      });
-      if (query) params.set("q", query);
-      if (cursor) params.set("pos", cursor);
-      const res = await fetch(`https://tenor.googleapis.com/v2/${endpoint}?${params}`);
-      if (!res.ok) throw new Error(`Tenor returned ${res.status}`);
-      const body = await res.json();
-      const items = (body.results || []).map((g) => {
-        const m = g.media_formats || {};
-        return {
-          id: g.id,
-          title: g.content_description || "Tenor GIF",
-          thumb: (m.tinygif || m.gif).url,
-          url: (m.mediumgif || m.gif).url,
-        };
-      });
-      return { items, next: items.length && body.next ? body.next : null };
-    },
-  },
 };
 
 // Pixabay asks API users to cache responses for 24 hours.

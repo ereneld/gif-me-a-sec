@@ -11,7 +11,6 @@ const DEFAULTS = {
   background: "blur",
   gif: null,
   giphyKey: "",
-  tenorKey: "",
   pixabayKey: "",
   pixabayType: "video",
   showPanel: true,
@@ -249,6 +248,8 @@ async function useRemoteVideo(url, meta) {
 }
 
 function showTab(tab) {
+  // A saved tab can point to a removed provider (Tenor); fall back to GIPHY.
+  if (!document.querySelector(`.tabs button[data-tab="${tab}"]`)) tab = "giphy";
   state.tab = tab;
   chrome.storage.local.set({ tab });
   document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));

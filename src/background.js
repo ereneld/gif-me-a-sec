@@ -19,4 +19,6 @@ chrome.commands.onCommand.addListener(async (command) => {
 // First install: open the welcome page where people add their API keys.
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   if (reason === "install") chrome.tabs.create({ url: chrome.runtime.getURL("popup/popup.html#welcome") });
+  // Tenor stopped issuing API keys, so it was removed in 1.0.2. Forget any saved Tenor key.
+  if (reason === "update") chrome.storage.local.remove("tenorKey");
 });

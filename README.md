@@ -4,7 +4,7 @@ Reaction GIFs on your webcam. Gif Me A Sec is a Chrome extension that plays a GI
 
 - **Your own camera, with GIFs on top**: there's no extra "virtual camera" to pick. Gif Me A Sec filters your real camera, playing the GIF for a set time (5 seconds by default) and then going straight back to you. You can also make it freeze on the last frame or keep looping, or show a still frame instead.
 - **On by default, instant on/off**: turning it off or on applies right away in an ongoing call, with no camera restart or reload.
-- **Pick GIFs** from GIPHY, Tenor or Pixabay (videos and images) with your own free API keys, a direct link, or an uploaded file (GIF, WebP, PNG, JPEG). Pixabay videos are converted to a 10-second, 10 fps clip in the popup.
+- **Pick GIFs** from GIPHY or Pixabay (videos and images) with your own free API keys, a direct link, or an uploaded file (GIF, WebP, PNG, JPEG). Pixabay videos are converted to a 10-second, 10 fps clip in the popup.
 - **Quick panel in meetings**: while your camera is on, a small GIF button sits in the corner of the meeting page. It opens reaction shortcuts (wow, lol, applause, bye…), a search box and a scrollable 3-column grid. One click plays that GIF, then hands back to your camera.
 - **Simple popup**: the popup is just search and pick. Play time, what happens after, fit and API keys live under Settings (the gear).
 - **Private**: no accounts, no tracking, no servers. See [PRIVACY.md](PRIVACY.md).
@@ -18,7 +18,7 @@ Reaction GIFs on your webcam. Gif Me A Sec is a Chrome extension that plays a GI
 
 ## Use
 
-1. On install, a welcome page asks for a free API key from GIPHY, Tenor or Pixabay (links to get one are right there). Any provider tab without a key shows the same key box.
+1. On install, a welcome page asks for a free API key from GIPHY or Pixabay (links to get one are right there). Any provider tab without a key shows the same key box.
 2. Reload any meeting tabs that were open before you installed the extension.
 3. Pick a GIF in the popup or in the quick panel in the meeting (search needs an API key, see below; URL and Upload work without one).
 4. The GIF plays on your camera for 5 seconds, then you're back. It only plays when you pick a GIF (or press Replay); turning the extension on or starting your camera never plays one by itself. Search results load 9 at a time as you scroll.
@@ -36,7 +36,6 @@ Keyboard shortcuts (change them at `chrome://extensions/shortcuts`):
 Each user adds their own free keys; the extension ships with none. Keys are saved only in the browser (`chrome.storage.local`) and sent only to their own service.
 
 - **GIPHY**: create an app at [developers.giphy.com](https://developers.giphy.com/dashboard/).
-- **Tenor**: enable the Tenor API in a Google Cloud project and create an API key ([quickstart](https://developers.google.com/tenor/guides/quickstart)).
 - **Pixabay**: sign up at [pixabay.com](https://pixabay.com/api/docs/) and copy the key shown in the API docs. Search results are cached for 24 hours, as Pixabay asks.
 
 ## Build and publish

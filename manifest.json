@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Gif Me A Sec",
   "short_name": "GifMeASec",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Drop a reaction GIF on your webcam for a few seconds in Google Meet and other web meetings. Wow, lol, bye, brb.",
   "homepage_url": "https://github.com/ereneld/gif-me-a-sec",
   "permissions": [
@@ -12,8 +12,6 @@
   "host_permissions": [
     "https://api.giphy.com/*",
     "https://*.giphy.com/*",
-    "https://tenor.googleapis.com/*",
-    "https://*.tenor.com/*",
     "https://pixabay.com/*",
     "https://cdn.pixabay.com/*"
   ],
