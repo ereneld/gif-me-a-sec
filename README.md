@@ -7,7 +7,11 @@ Reaction GIFs on your webcam. Gif Me A Sec is a Chrome extension that plays a GI
 - **Pick GIFs** from GIPHY or Pixabay (videos and images) with your own free API keys, a direct link, or an uploaded file (GIF, WebP, PNG, JPEG). Pixabay videos are converted to a 10-second, 10 fps clip in the popup.
 - **Quick panel in meetings**: while your camera is on, a small GIF button sits in the corner of the meeting page. It opens reaction shortcuts (wow, lol, applause, bye…), a search box and a scrollable 3-column grid. One click plays that GIF, then hands back to your camera.
 - **Simple popup**: the popup is just search and pick. Play time, what happens after, fit and API keys live under Settings (the gear).
-- **Private**: no accounts, no tracking, no servers. See [PRIVACY.md](PRIVACY.md).
+- **Private, everything stays local**: no accounts, no tracking, no servers. See [PRIVACY.md](PRIVACY.md).
+
+### Why "read and change your data on all websites"?
+
+Chrome shows that warning because the extension runs on every site, so it works on any meeting platform that uses your camera, not just a fixed list. It does not read the pages you visit, their URLs or their content, and it does not collect or send any data. It only swaps your own camera frames for GIF frames, locally in your browser. Your API keys and settings are kept with Chrome's normal extension storage on your machine.
 
 ## Install (developer mode)
 

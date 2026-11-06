@@ -1,8 +1,10 @@
 # Privacy Policy: Gif Me A Sec
 
-_Last updated: October 23, 2026_
+_Last updated: November 6, 2026_
 
 Gif Me A Sec is a Chrome extension that plays a GIF on your webcam for a few seconds during web meetings. It is built to collect nothing.
+
+**In short: everything happens on your own computer.** The extension does not read the websites you visit, their URLs or their content, and it does not collect, store or send any of your data. It only works with your own camera video, inside your own browser.
 
 ## What we collect
 
@@ -29,7 +31,7 @@ When you search, your search words and your own API key for that service are sen
 
 ## Permissions
 
-- **Access to all sites**: needed so the extension can work on any meeting site (Google Meet, Zoom, Teams, Whereby and others) by filtering the camera inside that page.
+- **Access to all sites** (Chrome shows this as "read and change your data on all websites"): needed only so the extension can work on any platform that uses your camera (Google Meet, Zoom, Teams, Whereby and others) by filtering the camera inside that page. It does not read page content, URLs or browsing history, and nothing from those pages is collected or sent anywhere.
 - **Storage / unlimited storage**: to keep your API keys, settings and the picked GIF (or converted video clip) on your device.
 - **GIPHY and Pixabay hosts**: to search and download GIFs.
 

@@ -31,8 +31,9 @@ Google Meet, Zoom on the web, Microsoft Teams on the web, Whereby, Discord and a
 ★ You stay in control
 Choose how long the GIF plays, whether it then returns to your camera, freezes, or keeps looping, and how it's fitted. Turn it on or off mid-call; it takes effect instantly.
 
-★ Private by design
-No accounts, no tracking, no servers. Your keys, settings and GIFs stay in your browser. Searches go straight to the GIF service you chose.
+★ Private by design: everything stays on your computer
+Chrome says the extension can "read and change your data on all websites". That access is only there so it works on any meeting platform that uses your camera, wherever you meet. Gif Me A Sec does not read the pages you visit, their URLs or their content, and it does not collect, store or send any of your data. The only thing it touches is your own camera video, inside your own browser.
+No accounts, no tracking, no servers of ours. Your keys, settings and GIFs stay on your machine. Searches go straight to the GIF service you chose.
 
 Keyboard shortcuts: Alt+Shift+Q opens the quick panel, Alt+Shift+G replays the GIF, Alt+Shift+C turns it on or off.
 
@@ -53,7 +54,7 @@ Show a short reaction GIF in place of the user's webcam video during web meeting
 **Permission justifications:**
 
 - *storage / unlimitedStorage*: Saves the user's settings, their own API keys and the picked GIF (or a short clip converted from a video, which can be a few MB) locally so they are ready in the next meeting.
-- *Host permission: all sites (content scripts on `<all_urls>`)*: The extension must run inside whichever meeting site the user uses (Meet, Zoom web, Teams web, Whereby, Discord, others) to filter that page's camera track and show the in-meeting GIF panel. It does nothing on pages that don't use the camera.
+- *Host permission: all sites (content scripts on `<all_urls>`)*: The extension must run inside whichever meeting site the user uses (Meet, Zoom web, Teams web, Whereby, Discord, others) to filter that page's camera track and show the in-meeting GIF panel. It does nothing on pages that don't use the camera. The extension does not read page content, URLs, browsing history or any other site data, and it sends nothing to us or anyone else; all processing happens locally in the user's browser.
 - *Host permissions for api.giphy.com, *.giphy.com, pixabay.com, cdn.pixabay.com*: To search those services with the user's own API key and download the GIF the user picks.
 - *Optional host permissions (any site)*: Requested only when the user pastes a GIF link from another site, so the GIF can be downloaded.
 - *Remote code*: No. All code is in the package.
