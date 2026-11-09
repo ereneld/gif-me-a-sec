@@ -21,17 +21,24 @@
     <section class="welcome">
       <h2>Welcome to Gif Me A Sec 👋</h2>
       <p class="hint">Drop a reaction GIF on your webcam for a few seconds in any web meeting. To search for GIFs, add a free API key from at least one of these services. You can add the others later in Settings.</p>
+      <div id="welcomeKeys" class="key-list"></div>
+      <h3>Where should it work?</h3>
+      <div id="welcomeSites"></div>
       <div class="privacy-note">
         <strong>🔒 Everything stays on your computer</strong>
-        <p>Chrome says this extension can "read and change your data on all websites". That's only so it works on any meeting platform that uses your camera. It doesn't read the pages you visit, their URLs or their content, and it sends no data anywhere. Your keys and settings are saved only in this browser.</p>
+        <p>When you turn it on, Chrome asks to let Gif Me A Sec "read and change your data" on the sites you picked. That's only so it can show GIFs on your camera there. It doesn't read the pages you visit, their URLs or their content, and it sends no data anywhere. Your keys and settings are saved only in this browser.</p>
       </div>
-      <div id="welcomeKeys" class="key-list"></div>
-      <button type="button" id="welcomeDone" disabled>Start</button>
+      <button type="button" id="welcomeDone" disabled>Turn on for my meetings</button>
       <button type="button" id="welcomeSkip" class="link">Skip, I'll use links and uploads</button>
     </section>
   </main>
 
   <main id="mainView">
+
+  <div id="siteNotice" class="site-notice hidden">
+    <span>Gif Me A Sec isn't allowed on any meeting site yet.</span>
+    <button type="button" id="siteNoticeButton">Choose sites</button>
+  </div>
 
   <section class="picker">
     <nav class="tabs">
@@ -127,12 +134,19 @@
       <h3>API keys</h3>
       <p class="hint">Needed only for searching. Links and uploads work without a key. Keys are saved in this browser only.</p>
       <div id="settingsKeys" class="key-list"></div>
+      <h3 id="sitesHeading">Sites</h3>
+      <p class="hint" id="sitesStatus"></p>
+      <div id="settingsSites"></div>
+      <button type="button" id="applySites">Turn on for my meetings</button>
       <h3>In meetings</h3>
       <label class="check"><input type="checkbox" id="showPanel" /> Show the GIF quick panel while your camera is on</label>
       <h3>Keyboard shortcuts</h3>
       <p class="hint">Alt+Shift+Q shows the quick panel, Alt+Shift+G replays the GIF, Alt+Shift+C turns it on or off. <a href="#" id="shortcutsLink">Change shortcuts</a></p>
       <h3>Privacy</h3>
-      <p class="hint">Everything stays on your computer. Gif Me A Sec runs on all sites only so it works on any meeting platform that uses your camera; it does not read the pages you visit, their URLs or their content, and sends no data anywhere. No accounts, no tracking, no servers of ours. Searches go straight to the GIF service you use.</p>
+      <p class="hint">Everything stays on your computer. Gif Me A Sec runs only on the sites you allowed, and only to show GIFs on your camera there; it does not read the pages you visit, their URLs or their content, and sends no data anywhere. No accounts, no tracking, no servers of ours. Searches go straight to the GIF service you use.</p>
+      <h3>About</h3>
+      <div class="about"><span id="version"></span><button type="button" id="checkUpdate" class="link">Check for updates</button></div>
+      <p class="hint" id="updateStatus"></p>
     </section>
   </main>
 

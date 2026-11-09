@@ -9,9 +9,11 @@ Reaction GIFs on your webcam. Gif Me A Sec is a Chrome extension that plays a GI
 - **Simple popup**: the popup is just search and pick. Play time, what happens after, fit and API keys live under Settings (the gear).
 - **Private, everything stays local**: no accounts, no tracking, no servers. See [PRIVACY.md](PRIVACY.md).
 
-### Why "read and change your data on all websites"?
+### Site access
 
-Chrome shows that warning because the extension runs on every site, so it works on any meeting platform that uses your camera, not just a fixed list. It does not read the pages you visit, their URLs or their content, and it does not collect or send any data. It only swaps your own camera frames for GIF frames, locally in your browser. Your API keys and settings are kept with Chrome's normal extension storage on your machine.
+Installing asks for no site access, so Chrome shows no "read and change your data" warning. On the welcome screen you choose where it works: **All sites** (the default), the listed meeting sites (Google Meet, Zoom, Teams, Webex, Whereby, Jitsi, Discord, Slack) or sites you add with **+**. Chrome asks once when you press **Turn on for my meetings**, and you can change it any time under Settings → Sites.
+
+That access is only used to swap your own camera frames for GIF frames, locally in your browser. The extension does not read the pages you visit, their URLs or their content, and it does not collect or send any data. Your API keys and settings stay in Chrome's extension storage on your machine. Access to GIPHY or Pixabay is asked for when you save a key for them.
 
 ## Install (developer mode)
 

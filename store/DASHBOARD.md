@@ -28,7 +28,7 @@ Google Meet, Zoom on the web, Microsoft Teams on the web, Whereby, Discord and a
 Choose how long the GIF plays, whether it then returns to your camera, freezes, or keeps looping, and how it's fitted. Turn it on or off mid-call; it takes effect instantly.
 
 ★ Private by design: everything stays on your computer
-Chrome says the extension can "read and change your data on all websites". That access is only there so it works on any meeting platform that uses your camera, wherever you meet. Gif Me A Sec does not read the pages you visit, their URLs or their content, and it does not collect, store or send any of your data. The only thing it touches is your own camera video, inside your own browser.
+Installing asks for no site access. You choose where it works: all sites (the default), a list of meeting sites, or your own. Chrome then asks once, and that access is only used to show GIFs on your camera in those meetings. Gif Me A Sec does not read the pages you visit, their URLs or their content, and it does not collect, store or send any of your data. The only thing it touches is your own camera video, inside your own browser.
 No accounts, no tracking, no servers of ours. Your keys, settings and GIFs stay on your machine. Searches go straight to the GIF service you chose.
 
 Keyboard shortcuts: Alt+Shift+Q opens the quick panel, Alt+Shift+G replays the GIF, Alt+Shift+C turns it on or off.

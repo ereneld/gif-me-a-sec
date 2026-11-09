@@ -7,17 +7,11 @@
   "homepage_url": "https://github.com/ereneld/gif-me-a-sec",
   "permissions": [
     "storage",
-    "unlimitedStorage"
-  ],
-  "host_permissions": [
-    "https://api.giphy.com/*",
-    "https://*.giphy.com/*",
-    "https://pixabay.com/*",
-    "https://cdn.pixabay.com/*"
+    "unlimitedStorage",
+    "scripting"
   ],
   "optional_host_permissions": [
-    "https://*/*",
-    "http://*/*"
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "src/background.js"
@@ -57,29 +51,6 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "src/inject.js"
-      ],
-      "run_at": "document_start",
-      "all_frames": true,
-      "world": "MAIN"
-    },
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "src/bridge.js"
-      ],
-      "run_at": "document_start",
-      "all_frames": true
-    }
-  ],
   "web_accessible_resources": [
     {
       "resources": [

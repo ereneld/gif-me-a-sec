@@ -1,4 +1,5 @@
 import { PROVIDERS, thumbnail, infiniteResults } from "./providers.js";
+import { MEETING_SITES, siteFromInput, currentAccess, requestSites } from "./sites.js";
 import { storeImage, storeRemoteImage, storeRemoteVideo } from "./media.js";
 
 const $ = (id) => document.getElementById(id);
@@ -16,6 +17,7 @@ const DEFAULTS = {
   showPanel: true,
   tab: "giphy",
   welcomeDone: false,
+  customSites: [],
 };
 
 let state = { ...DEFAULTS };
@@ -102,7 +104,10 @@ async function queryTabStatus() {
 
 function showView(name) {
   for (const view of ["welcome", "main", "settings"]) $(`${view}View`).classList.toggle("hidden", view !== name);
-  if (name === "settings") renderSettingsKeys();
+  if (name === "settings") {
+    renderSettingsKeys();
+    renderSites();
+  }
   if (name === "welcome") renderWelcome();
   if (name === "main") runSearch();
 }
@@ -116,7 +121,7 @@ function showSettings(open) {
 const hasAnyKey = () => Object.values(PROVIDERS).some((p) => state[p.keyName]);
 
 // A card with a provider's key input and a link to get a key.
-function keyCard(id, onSaved) {
+function keyCard(id, onSaved, { askAccess = true } = {}) {
   const provider = PROVIDERS[id];
   const card = document.createElement("form");
   card.className = "key-card";
@@ -152,6 +157,8 @@ function keyCard(id, onSaved) {
   card.addEventListener("submit", async (e) => {
     e.preventDefault();
     const value = input.value.trim();
+    // Searching needs access to the provider's site; ask while we still have the click.
+    if (askAccess && value) chrome.permissions.request({ origins: provider.origins }).catch(() => {});
     await save({ [provider.keyName]: value });
     ok.textContent = value ? "✓ Added" : "";
     toast(value ? `${provider.name} key saved` : `${provider.name} key removed`);
@@ -166,11 +173,155 @@ function renderSettingsKeys() {
 
 function renderWelcome() {
   const update = () => ($("welcomeDone").disabled = !hasAnyKey());
-  $("welcomeKeys").replaceChildren(...Object.keys(PROVIDERS).map((id) => keyCard(id, update)));
+  // One Chrome prompt at Start covers the sites and the GIF services.
+  $("welcomeKeys").replaceChildren(...Object.keys(PROVIDERS).map((id) => keyCard(id, update, { askAccess: false })));
+  $("welcomeSites").replaceChildren(sitesChooser("welcome", { custom: state.customSites || [] }));
   update();
 }
 
-async function finishWelcome() {
+// ------------------------------------------------------------- site access
+// A sites picker: "All sites" on by default; untick it to choose meeting sites
+// or add your own with +. Returns the element; read it with chosenSites().
+
+function sitesChooser(name, { all = true, granted = null, custom = [] } = {}) {
+  const box = document.createElement("div");
+  box.className = "sites-choice";
+  box.id = `sites-${name}`;
+  const allLabel = document.createElement("label");
+  allLabel.className = "all-sites";
+  const allInput = document.createElement("input");
+  allInput.type = "checkbox";
+  allInput.className = "all";
+  allInput.checked = all;
+  const allText = document.createElement("span");
+  allText.innerHTML = "<strong>All sites</strong> <small>Works in any meeting tool in your browser.</small>";
+  allLabel.append(allInput, allText);
+
+  const list = document.createElement("div");
+  list.className = "site-list";
+  const row = (site, checked, removable) => {
+    const label = document.createElement("label");
+    label.className = "site";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.checked = checked;
+    input.dataset.site = JSON.stringify(site);
+    const text = document.createElement("span");
+    text.textContent = site.name;
+    label.append(input, text);
+    if (removable) {
+      const x = document.createElement("button");
+      x.type = "button";
+      x.className = "remove";
+      x.title = `Remove ${site.name}`;
+      x.textContent = "×";
+      x.addEventListener("click", async (e) => {
+        e.preventDefault();
+        label.remove();
+        await save({ customSites: (state.customSites || []).filter((c) => c.name !== site.name) });
+      });
+      label.append(x);
+    }
+    return label;
+  };
+  for (const site of MEETING_SITES) list.append(row(site, granted ? granted.has(site.name) : true, false));
+  for (const site of custom) list.append(row(site, granted ? granted.has(site.name) : true, true));
+
+  const add = document.createElement("form");
+  add.className = "add-site";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "Add a site, e.g. meet.example.com";
+  input.spellcheck = false;
+  const plus = document.createElement("button");
+  plus.type = "submit";
+  plus.title = "Add site";
+  plus.textContent = "+";
+  add.append(input, plus);
+  add.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const site = siteFromInput(input.value);
+    if (!site) return toast("That doesn't look like a site address.");
+    input.value = "";
+    if ([...MEETING_SITES, ...(state.customSites || [])].some((s) => s.name === site.name)) return;
+    add.before(row(site, true, true));
+    await save({ customSites: [...(state.customSites || []), site] });
+  });
+  list.append(add);
+
+  // With "All sites" on, the list stays visible but is covered by it.
+  const sync = () => {
+    list.classList.toggle("covered", allInput.checked);
+    list.querySelectorAll("input, button").forEach((el) => (el.disabled = allInput.checked));
+  };
+  allInput.addEventListener("change", sync);
+  sync();
+  box.append(allLabel, list);
+  return box;
+}
+
+function chosenSites(name) {
+  const box = $(`sites-${name}`);
+  const all = box.querySelector("input.all").checked;
+  const sites = [...box.querySelectorAll(".site input:checked")].map((i) => JSON.parse(i.dataset.site));
+  return { all, sites };
+}
+
+const knownSites = () => [...MEETING_SITES, ...(state.customSites || [])];
+
+async function renderSites() {
+  const { all, granted } = await currentAccess(knownSites());
+  const none = !all && !granted.size;
+  $("sitesStatus").textContent = all
+    ? "On for all sites."
+    : none
+      ? "Not turned on for any site yet, so GIFs won't show in your meetings."
+      : `On for ${[...granted].join(", ")}.`;
+  $("settingsSites").replaceChildren(
+    sitesChooser("settings", { all: all || none, granted: none ? null : granted, custom: state.customSites || [] })
+  );
+  $("siteNotice").classList.toggle("hidden", !none);
+}
+
+async function applySites() {
+  const choice = chosenSites("settings");
+  const granted = await requestSites(choice, knownSites()).catch(() => false);
+  await renderSites();
+  toast(granted ? "Saved. Reload any meeting tab that's already open." : "Chrome didn't allow it, nothing changed.");
+}
+
+// Chrome updates store extensions on its own every few hours; this asks now.
+async function checkForUpdate() {
+  const out = $("updateStatus");
+  out.textContent = "Checking…";
+  try {
+    const { status, version } = await chrome.runtime.requestUpdateCheck();
+    if (status === "update_available") {
+      out.textContent = `Updating to ${version}… Reload any meeting tab that's open afterwards.`;
+      setTimeout(() => chrome.runtime.reload(), 1500);
+    } else if (status === "throttled") {
+      out.textContent = "Checked a moment ago. Chrome will install updates automatically.";
+    } else {
+      out.textContent = "You're on the latest version.";
+    }
+  } catch {
+    out.textContent = "Chrome updates Gif Me A Sec automatically.";
+  }
+}
+
+function showSitesSettings() {
+  showView("settings");
+  $("sitesHeading").scrollIntoView({ block: "start" });
+}
+
+async function finishWelcome(e) {
+  // Ask Chrome first, while we still have the click. Skipping asks too, so
+  // links and uploads still show up in meetings.
+  const extra = Object.values(PROVIDERS).filter((p) => state[p.keyName]).flatMap((p) => p.origins);
+  const choice = chosenSites("welcome");
+  const granted = await requestSites(choice, knownSites(), choice.all ? [] : extra).catch(() => false);
+  renderSites();
+  if (!granted) toast("Not turned on yet, so GIFs won't show in meetings. You can do it in Settings.", 6000);
   await save({ welcomeDone: true });
   const firstWithKey = Object.keys(PROVIDERS).find((id) => state[PROVIDERS[id].keyName]);
   if (firstWithKey) showTab(firstWithKey);
@@ -180,6 +331,10 @@ async function finishWelcome() {
 function bindSettings() {
   $("openSettings").addEventListener("click", () => showSettings($("settingsView").classList.contains("hidden")));
   $("closeSettings").addEventListener("click", () => showSettings(false));
+  $("applySites").addEventListener("click", applySites);
+  $("version").textContent = `Gif Me A Sec ${chrome.runtime.getManifest().version}`;
+  $("checkUpdate").addEventListener("click", checkForUpdate);
+  $("siteNoticeButton").addEventListener("click", showSitesSettings);
   $("shortcutsLink").addEventListener("click", (e) => {
     e.preventDefault();
     chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
@@ -279,6 +434,29 @@ function runSearch() {
   }
   notice.classList.add("hidden");
   if (feed) feed.stop();
+  feed = null;
+  const tabAtStart = state.tab;
+  chrome.permissions.contains({ origins: provider.origins }).then((ok) => {
+    if (state.tab !== tabAtStart) return;
+    if (ok) return startFeed(provider, key);
+    // A key from an older version, saved before access was asked per service.
+    results.replaceChildren();
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = `Allow access to ${provider.name}`;
+    btn.addEventListener("click", () =>
+      chrome.permissions.request({ origins: provider.origins }).then((granted) => granted && runSearch())
+    );
+    const text = document.createElement("span");
+    text.textContent = `Gif Me A Sec needs access to ${provider.name} to search.`;
+    notice.replaceChildren(text, btn);
+    notice.classList.remove("hidden");
+  });
+}
+
+function startFeed(provider, key) {
+  const results = $("results");
+  if (feed) feed.stop();
   feed = infiniteResults(results, {
     provider,
     key,
@@ -352,7 +530,9 @@ function bindPicker() {
   renderSettings();
   renderPreview();
   showTab(state.tab);
+  renderSites();
   if (location.hash === "#settings") showView("settings");
+  else if (location.hash === "#sites") showSitesSettings();
   else if (location.hash === "#welcome" || (!state.welcomeDone && !hasAnyKey())) showView("welcome");
   queryTabStatus();
 })();

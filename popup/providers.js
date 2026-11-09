@@ -8,6 +8,7 @@ export const PROVIDERS = {
   giphy: {
     name: "GIPHY",
     keyName: "giphyKey",
+    origins: ["https://*.giphy.com/*"],
     keyUrl: "https://developers.giphy.com/dashboard/",
     keyHelp: "Create a free app in the GIPHY developer dashboard and copy its API key.",
     attribution: "Powered by GIPHY",
@@ -54,6 +55,7 @@ async function cachedJson(url) {
 PROVIDERS.pixabay = {
   name: "Pixabay",
   keyName: "pixabayKey",
+  origins: ["https://pixabay.com/*", "https://cdn.pixabay.com/*"],
   keyUrl: "https://pixabay.com/api/docs/",
   keyHelp: "Sign up for free, then copy the key shown in the API docs.",
   attribution: "Images and videos from Pixabay",
