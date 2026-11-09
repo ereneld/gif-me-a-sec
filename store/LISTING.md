@@ -42,7 +42,7 @@ Not affiliated with GIPHY or Pixabay.
 ## Graphics (in this folder)
 
 - Store icon 128×128: `../icons/icon128.png`
-- Screenshots 1280×800: `screenshot-1-meeting.png`, `screenshot-2-popup.png`
+- Screenshots 1280×800, in this order: `screenshot-1-hero.png`, `screenshot-2-before-after.png`, `screenshot-3-gif-and-back.png`, `screenshot-4-search.png`, `screenshot-5-privacy.png`. People are Pixabay stock (free for commercial use); GIFs are real GIPHY results picked to avoid celebrities and TV characters.
 - Small promo tile 440×280: `promo-small-440x280.png`
 - Marquee promo tile 1400×560 (optional): `promo-marquee-1400x560.png`
 
