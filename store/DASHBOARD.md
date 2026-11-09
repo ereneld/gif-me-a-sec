@@ -46,8 +46,11 @@ Not affiliated with GIPHY or Pixabay.
 | --- | --- | --- |
 | Store icon (128×128) | `icons/icon128.png` | Transparent corners are allowed for the icon |
 | Global promo video | leave empty | optional |
-| Screenshot 1 | `store/screenshot-1-meeting.png` | 1280×800, no alpha |
-| Screenshot 2 | `store/screenshot-2-popup.png` | 1280×800, no alpha |
+| Screenshot 1 | `store/screenshot-1-hero.png` | 1280×800, no alpha |
+| Screenshot 2 | `store/screenshot-2-before-after.png` | 1280×800, no alpha |
+| Screenshot 3 | `store/screenshot-3-gif-and-back.png` | 1280×800, no alpha |
+| Screenshot 4 | `store/screenshot-4-search.png` | 1280×800, no alpha |
+| Screenshot 5 | `store/screenshot-5-privacy.png` | 1280×800, no alpha |
 | Small promo tile | `store/promo-small-440x280.png` | 440×280, no alpha |
 | Marquee promo tile | `store/promo-marquee-1400x560.png` | 1400×560, no alpha, optional |
 
