@@ -4,10 +4,12 @@ Copy these into the Developer Dashboard (https://chrome.google.com/webstore/devc
 
 ## Store listing
 
-**Name:** Gif Me A Sec
+**Name:** Gif Me A Sec: GIF Webcam for Google Meet & Zoom
+
+(Comes from `manifest.json`. The short name shown under the toolbar icon stays "Gif Me A Sec".)
 
 **Summary (132 chars max):**
-Drop a reaction GIF on your webcam for a few seconds in Google Meet and other web meetings. Wow, lol, bye, brb.
+Show a reaction GIF on your webcam in Google Meet, Zoom, Teams and Discord for a few seconds. Free, no virtual camera.
 
 **Category:** Communication (alternative: Fun)
 

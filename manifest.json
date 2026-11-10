@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Gif Me A Sec",
-  "short_name": "GifMeASec",
-  "version": "1.0.2",
-  "description": "Drop a reaction GIF on your webcam for a few seconds in Google Meet and other web meetings. Wow, lol, bye, brb.",
+  "name": "Gif Me A Sec: GIF Webcam for Google Meet & Zoom",
+  "short_name": "Gif Me A Sec",
+  "version": "1.0.3",
+  "description": "Show a reaction GIF on your webcam in Google Meet, Zoom, Teams and Discord for a few seconds. Free, no virtual camera.",
   "homepage_url": "https://github.com/ereneld/gif-me-a-sec",
   "permissions": [
     "storage",

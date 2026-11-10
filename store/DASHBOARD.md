@@ -4,7 +4,7 @@ Field by field, in the order the dashboard shows them.
 
 ## Product details
 
-**Title:** Gif Me A Sec (comes from the package, nothing to do)
+**Title:** Gif Me A Sec: GIF Webcam for Google Meet & Zoom (comes from the package, nothing to do)
 
 **Summary:** comes from the package, nothing to do
 
